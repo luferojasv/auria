@@ -92,15 +92,15 @@ class _PintorAnillos extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = grosor
-          ..color = a.color.withValues(alpha: 0.14),
+          ..color = a.color.withValues(alpha: 0.16),
       );
 
       final valor = (a.valor * avance).clamp(0.0, 3.0);
       if (valor > 0.001) {
         final vuelta1 = math.min(valor, 1.0);
 
-        // Halo: mismo arco desenfocado por debajo. Es lo que da la sensacion de
-        // que el anillo emite luz sobre el cristal.
+        // Halo: mismo arco desenfocado por debajo, que da volumen al anillo.
+        // En tema claro va suave: un halo fuerte sobre blanco se ve sucio.
         canvas.drawArc(
           rect,
           _inicio,
@@ -110,8 +110,8 @@ class _PintorAnillos extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = grosor
             ..strokeCap = StrokeCap.round
-            ..color = a.color.withValues(alpha: 0.5)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+            ..color = a.color.withValues(alpha: 0.28)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
         );
 
         final trazo = Paint()
@@ -124,12 +124,15 @@ class _PintorAnillos extends CustomPainter {
             // El degradado gira con el arco para que el extremo brillante caiga
             // siempre en la punta.
             transform: GradientRotation(_inicio),
+            // De un tono claro del acento a su versión plena en la punta. En
+            // tema claro NO se blanquea el extremo: sobre fondo luminoso, la
+            // punta blanca simplemente desaparecería.
             colors: [
-              a.color.withValues(alpha: 0.72),
+              Color.lerp(a.color, Colors.white, 0.40)!,
               a.color,
-              Color.lerp(a.color, Colors.white, 0.35)!,
+              a.color,
             ],
-            stops: const [0.0, 0.55, 1.0],
+            stops: const [0.0, 0.65, 1.0],
           ).createShader(rect);
 
         canvas.drawArc(rect, _inicio, 2 * math.pi * vuelta1, false, trazo);

@@ -156,6 +156,20 @@ class ResumenGlucosa {
     return 3.31 + 0.02392 * m;
   }
 
+  /// Días que abarcan las lecturas, de la primera a la última.
+  int get diasCubiertos {
+    if (lecturas.length < 2) return lecturas.isEmpty ? 0 : 1;
+    final dur = lecturas.last.momento.difference(lecturas.first.momento);
+    // Al menos 1 si hay lecturas en menos de un día.
+    return (dur.inHours / 24).ceil().clamp(1, 3650);
+  }
+
+  /// Un GMI representativo necesita ~14 días continuos de sensor (criterio de
+  /// consenso). Por debajo, el número existe pero es solo orientativo.
+  static const diasMinimosGmi = 14;
+
+  bool get gmiFiable => diasCubiertos >= diasMinimosGmi;
+
   /// Coeficiente de variación (%), medida estándar de variabilidad glucémica.
   /// Por debajo de 36% se considera glucosa estable.
   double? get variabilidad {

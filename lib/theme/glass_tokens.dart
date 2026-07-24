@@ -2,58 +2,70 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// Tokens del sistema de diseno "aurora glass".
+/// Tokens del sistema de diseño "aurora glass", en **tema claro**.
 ///
-/// Un solo sitio donde viven color, desenfoque, radio y ritmo vertical, para
-/// que las pantallas no inventen valores sueltos.
+/// El glassmorphism claro funciona al revés que el oscuro: allí el cristal se
+/// veía porque dejaba pasar luz de color; aquí se ve porque es un vidrio
+/// esmerilado **blanco** que aclara y difumina lo que tiene detrás (el mismo
+/// principio que iOS/macOS). De ahí que el relleno tenga mucha más opacidad que
+/// en un tema oscuro: por debajo del 55% el cristal deja de leerse como tal.
 abstract final class G {
   // ---------------------------------------------------------------- color ---
 
-  /// Fondo base. Casi negro pero con tinte azul: el cristal necesita algo de
-  /// color debajo o se ve gris sucio.
-  static const fondo = Color(0xFF070A14);
-  static const fondoAlto = Color(0xFF0D1122);
+  /// Fondo base: blanco con un punto de azul, para que los focos de la aurora
+  /// no floten sobre un blanco muerto.
+  static const fondo = Color(0xFFF2F4FB);
 
-  /// Los tres focos de la aurora que se mueven detras del contenido.
+  /// Superficie sólida (hojas modales, menús).
+  static const fondoAlto = Color(0xFFFFFFFF);
+
+  /// Fondo de tooltips y toasts. Oscuro a propósito: sobre una app clara, un
+  /// tooltip blanco se confundiría con el contenido.
+  static const fondoInverso = Color(0xFF1B1E36);
+
+  /// Focos de la aurora. Se pintan con alfa bajo: sobre fondo claro basta un
+  /// velo para dar color, y pasarse ensucia el blanco.
   static const auroraViolet = Color(0xFF7C5CFF);
   static const auroraCian = Color(0xFF22D3EE);
   static const auroraRosa = Color(0xFFFF5C8A);
 
-  /// Acentos semanticos por dominio de dato.
-  static const acentoEjercicio = Color(0xFF7C5CFF); // fuerza / entrenamiento
-  static const acentoSueno = Color(0xFF818CF8); // sueno
-  static const acentoPulso = Color(0xFFFF5C8A); // ritmo cardiaco
-  static const acentoActividad = Color(0xFF22D3EE); // pasos / movimiento
-  static const acentoCalorias = Color(0xFFFBBF24); // energia
+  /// Acentos por dominio de dato. Más saturados que en el tema oscuro: sobre
+  /// blanco, un color luminoso pierde contraste y deja de ser legible.
+  static const acentoEjercicio = Color(0xFF6341F0); // fuerza / entrenamiento
+  static const acentoSueno = Color(0xFF4F52C9); // sueño
+  static const acentoPulso = Color(0xFFDB3A72); // ritmo cardiaco
+  static const acentoActividad = Color(0xFF0E8FB2); // pasos / movimiento
+  static const acentoCalorias = Color(0xFFC77807); // energia
 
-  static const exito = Color(0xFF34D399);
-  static const alerta = Color(0xFFFBBF24);
-  static const error = Color(0xFFFB7185);
+  static const exito = Color(0xFF0E9F6E);
+  static const alerta = Color(0xFFC77807);
+  static const error = Color(0xFFD92D20);
 
-  // Texto sobre cristal oscuro.
-  static const textoAlto = Color(0xFFF4F5FB);
-  static const textoMedio = Color(0xB3F4F5FB); // 70%
-  static const textoBajo = Color(0x80F4F5FB); // 50%
-  static const textoTenue = Color(0x4DF4F5FB); // 30%
+  // Texto sobre cristal claro.
+  static const textoAlto = Color(0xFF14162B);
+  static const textoMedio = Color(0xB014162B); // 69%
+  static const textoBajo = Color(0x8A14162B); // 54%
+  static const textoTenue = Color(0x5C14162B); // 36%
 
   // --------------------------------------------------------------- cristal ---
 
-  /// Relleno del cristal. Muy bajo a proposito: el brillo real lo da el
-  /// desenfoque del fondo, no la opacidad del relleno.
-  static const cristalRelleno = Color(0x14FFFFFF); // 8%
-  static const cristalRellenoAlto = Color(0x1FFFFFFF); // 12%
-  static const cristalBorde = Color(0x26FFFFFF); // 15%
-  static const cristalBordeAlto = Color(0x40FFFFFF); // 25%
+  /// Relleno del cristal: blanco translúcido. Alto a propósito (ver nota
+  /// arriba): es lo que produce el esmerilado.
+  static const cristalRelleno = Color(0xA6FFFFFF); // 65%
+  static const cristalRellenoAlto = Color(0xD6FFFFFF); // 84%
 
-  /// Sheen: el degradado diagonal que simula la luz rozando el borde superior.
-  /// Sin esto el "cristal" parece plastico plano.
-  static const brilloSuperior = Color(0x1AFFFFFF);
+  /// Borde de definición. En claro, un borde blanco desaparece: hace falta una
+  /// línea oscura muy tenue para separar la tarjeta del fondo.
+  static const cristalBorde = Color(0x1F14162B); // 12% oscuro
+  static const cristalBordeAlto = Color(0x3314162B); // 20% oscuro
+
+  /// Reflejo blanco del canto superior, lo que da el "filo" del vidrio.
+  static const brilloSuperior = Color(0xE6FFFFFF);
 
   // ------------------------------------------------------------- desenfoque ---
 
   /// OJO: cada BackdropFilter es una pasada de GPU cara. En listas largas
-  /// usamos [GlassCard] con `desenfocar: false`, que pinta el mismo relleno
-  /// sin la pasada de blur. Ver nota en glass_card.dart.
+  /// usamos [GlassCard] con `desenfocar: false`.
   static const blurSuave = 12.0;
   static const blurMedio = 24.0;
   static const blurFuerte = 40.0;
@@ -91,43 +103,51 @@ abstract final class G {
 
   // ------------------------------------------------------------------ sombra ---
 
-  /// Sombra de elevacion del cristal. Negra y muy difusa: separa la tarjeta
-  /// del fondo sin ensuciar el color.
-  static List<BoxShadow> sombra({double y = 12, double blur = 32}) => [
+  /// Sombra de elevación. Azulada y muy difusa, nunca negra: sobre blanco, el
+  /// negro puro ensucia y se ve como una mancha gris.
+  static List<BoxShadow> sombra({double y = 10, double blur = 28}) => [
         BoxShadow(
-          color: const Color(0xFF000000).withValues(alpha: 0.32),
+          color: const Color(0xFF2A2E5A).withValues(alpha: 0.10),
           offset: Offset(0, y),
           blurRadius: blur,
-          spreadRadius: -8,
+          spreadRadius: -6,
+        ),
+        // Segunda sombra corta: asienta la tarjeta y define su canto inferior.
+        BoxShadow(
+          color: const Color(0xFF2A2E5A).withValues(alpha: 0.06),
+          offset: const Offset(0, 2),
+          blurRadius: 6,
+          spreadRadius: -2,
         ),
       ];
 
-  /// Halo de color para elementos activos (anillo cerrado, boton primario).
-  static List<BoxShadow> halo(Color c, {double intensidad = 0.45}) => [
+  /// Halo de color para elementos activos.
+  static List<BoxShadow> halo(Color c, {double intensidad = 0.35}) => [
         BoxShadow(
           color: c.withValues(alpha: intensidad),
-          blurRadius: 28,
+          blurRadius: 22,
           spreadRadius: -6,
+          offset: const Offset(0, 6),
         ),
       ];
 
   // -------------------------------------------------------------- degradados ---
 
-  /// Sheen diagonal estandar para superficies de cristal.
+  /// Reflejo diagonal del cristal: blanco arriba-izquierda que se desvanece.
   static const gradienteCristal = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [brilloSuperior, Color(0x00FFFFFF)],
-    stops: [0.0, 0.55],
+    colors: [Color(0x99FFFFFF), Color(0x14FFFFFF)],
+    stops: [0.0, 0.6],
   );
 
   static LinearGradient gradienteAcento(Color c) => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [c, Color.lerp(c, auroraCian, 0.45)!],
+        colors: [c, Color.lerp(c, auroraCian, 0.35)!],
       );
 
-  /// Filtro reutilizable; evita construir un ImageFilter nuevo en cada build.
+  /// Filtros reutilizables; evita construir un ImageFilter en cada build.
   static final ImageFilter filtroSuave =
       ImageFilter.blur(sigmaX: blurSuave, sigmaY: blurSuave);
   static final ImageFilter filtroMedio =
@@ -136,7 +156,7 @@ abstract final class G {
       ImageFilter.blur(sigmaX: blurFuerte, sigmaY: blurFuerte);
 }
 
-/// Tipografia. Numeros con cifras tabulares para que los contadores no bailen
+/// Tipografía. Números con cifras tabulares para que los contadores no bailen
 /// al cambiar de valor.
 abstract final class T {
   static const _f = 'Inter';
@@ -203,7 +223,7 @@ abstract final class T {
     color: G.textoBajo,
   );
 
-  /// Mayusculas espaciadas para encabezados de seccion.
+  /// Mayúsculas espaciadas para encabezados de sección.
   static const overline = TextStyle(
     fontFamily: _f,
     fontSize: 11,

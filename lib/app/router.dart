@@ -16,7 +16,14 @@ import 'shell.dart';
 /// Flutter pinta el texto con el subrayado amarillo de "falta Material". Las
 /// pestañas ya lo heredan del shell; estas pantallas modales, no.
 Widget _modal(Widget hijo) => AuroraBackground(
-      child: Scaffold(backgroundColor: Colors.transparent, body: hijo),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          // Mismo ancho móvil que el shell: coherencia en escritorio.
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Scaffold(backgroundColor: Colors.transparent, body: hijo),
+        ),
+      ),
     );
 
 /// Rutas de la app.

@@ -50,16 +50,17 @@ class MetricaTile extends StatelessWidget {
           ),
           const SizedBox(height: G.e3),
           // baseline para que la unidad se apoye en el pie del numero.
+          // FittedBox encoge el número si no cabe en vez de recortarlo con "…":
+          // en una métrica, "1.7…" no informa de nada.
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Flexible(
-                child: Text(
-                  valor,
-                  style: T.metrica,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(valor, style: T.metrica, maxLines: 1),
                 ),
               ),
               if (unidad != null) ...[
@@ -155,14 +156,16 @@ class GlassChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icono != null) ...[
-              Icon(icono, size: 13, color: activo ? Colors.white : G.textoBajo),
+              // En claro el chip activo tiene fondo pastel: el texto toma el
+              // color del acento, no blanco, que sobre pastel no se leería.
+              Icon(icono, size: 13, color: activo ? color : G.textoBajo),
               const SizedBox(width: 5),
             ],
             Text(
               texto,
               style: T.etiqueta.copyWith(
-                color: activo ? Colors.white : G.textoMedio,
-                fontWeight: activo ? FontWeight.w600 : FontWeight.w500,
+                color: activo ? color : G.textoMedio,
+                fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

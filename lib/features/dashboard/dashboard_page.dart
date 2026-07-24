@@ -409,7 +409,7 @@ class _GraficaPulso extends StatelessWidget {
                 ),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => G.fondoAlto,
+                    getTooltipColor: (_) => G.fondoInverso,
                     getTooltipItems: (spots) => spots
                         .map((s) => LineTooltipItem(
                               '${s.y.round()} bpm\n${s.x.toInt()}:${((s.x % 1) * 60).round().toString().padLeft(2, '0')}',
@@ -480,10 +480,11 @@ class _TarjetaSueno extends StatelessWidget {
   final SesionSueno sueno;
 
   static const _colores = {
-    FaseSueno.profundo: Color(0xFF4C4FD6),
-    FaseSueno.rem: Color(0xFF818CF8),
-    FaseSueno.ligero: Color(0xFF9FB0FF),
-    FaseSueno.despierto: Color(0xFFFFB4C4),
+    // Escala de índigos de más profundo a más claro, ajustada a tema claro.
+    FaseSueno.profundo: Color(0xFF3F43C4),
+    FaseSueno.rem: Color(0xFF6366E8),
+    FaseSueno.ligero: Color(0xFF9BA4EF),
+    FaseSueno.despierto: Color(0xFFEE8FA8),
   };
 
   @override

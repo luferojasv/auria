@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,18 +12,51 @@ import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
 import 'domain/glucose_models.dart';
 import 'event_sheet.dart';
+import 'link_sheet.dart';
 
 /// Colores por zona glucémica. El verde = en rango es la referencia visual.
-const _cBajo = Color(0xFFFB7185);
-const _cEnRango = Color(0xFF34D399);
-const _cAlto = Color(0xFFFBBF24);
-const _cMuyAlto = Color(0xFFFB923C);
+/// Saturados para tema claro: los tonos pastel que funcionaban sobre fondo
+/// oscuro se vuelven ilegibles sobre blanco.
+const _cBajo = Color(0xFFE5484D);
+const _cEnRango = Color(0xFF0E9F6E);
+const _cAlto = Color(0xFFC77807);
+const _cMuyAlto = Color(0xFFDD6B20);
 
-class GlucosePage extends ConsumerWidget {
+/// Refresca la glucosa periódicamente **solo mientras esta pantalla está
+/// montada** y hay datos reales (con el mock no aporta nada). Al salir de la
+/// pantalla, el `dispose` corta el timer y deja de llamar a LibreLinkUp.
+class GlucosePage extends ConsumerStatefulWidget {
   const GlucosePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<GlucosePage> createState() => _GlucosePageState();
+}
+
+class _GlucosePageState extends ConsumerState<GlucosePage> {
+  Timer? _refresco;
+
+  static const _cadencia = Duration(minutes: 1);
+
+  @override
+  void initState() {
+    super.initState();
+    // El sensor entrega un dato nuevo cada ~1 min: ese es el ritmo más fino útil.
+    _refresco = Timer.periodic(_cadencia, (_) {
+      if (ref.read(glucosaVinculadaProvider).value == true) {
+        ref.invalidate(resumenGlucosaProvider);
+        ref.invalidate(ultimaGlucosaProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _refresco?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final resumen = ref.watch(resumenGlucosaProvider);
     final eventos = ref.watch(eventosDiaProvider);
 
@@ -44,7 +79,17 @@ class GlucosePage extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      Text('Glucosa', style: T.titulo),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('Glucosa', style: T.titulo),
+                          // Deja claro de un vistazo si lo que se ve es real o
+                          // de demostración: en una app de salud, confundirlos
+                          // sería grave.
+                          const _FuenteActiva(),
+                        ],
+                      ),
                       const Spacer(),
                       resumen.maybeWhen(
                         data: (r) => _Ultima(resumen: r),
@@ -64,7 +109,12 @@ class GlucosePage extends ConsumerWidget {
                   child: EstadoVacio(
                     icono: Icons.bloodtype_outlined,
                     titulo: 'No se pudo leer la glucosa',
-                    detalle: '$e',
+                    detalle: _mensajeError(e),
+                    accion: 'Reintentar',
+                    onAccion: () {
+                      ref.invalidate(resumenGlucosaProvider);
+                      ref.invalidate(ultimaGlucosaProvider);
+                    },
                   ),
                 ),
                 data: (r) => SliverPadding(
@@ -99,6 +149,42 @@ class GlucosePage extends ConsumerWidget {
           child: _BotonAnadir(onTap: () => abrirNuevoEvento(context, ref)),
         ),
       ],
+    );
+  }
+}
+
+/// Indicador de origen de los datos. Tocarlo abre la vinculación.
+class _FuenteActiva extends ConsumerWidget {
+  const _FuenteActiva();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vinculada = ref.watch(glucosaVinculadaProvider).value ?? false;
+    final color = vinculada ? _cEnRango : G.acentoCalorias;
+
+    return GestureDetector(
+      onTap: () => abrirVinculoGlucosa(context),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 3, bottom: 2, right: G.e4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 7,
+              height: 7,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              vinculada ? 'FreeStyle Libre' : 'Datos de demostración',
+              style: T.etiqueta.copyWith(fontSize: 11, color: color),
+            ),
+            const SizedBox(width: 3),
+            Icon(Icons.chevron_right_rounded, size: 14, color: color),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -222,7 +308,7 @@ class _Grafica extends StatelessWidget {
             ),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => G.fondoAlto,
+                getTooltipColor: (_) => G.fondoInverso,
                 getTooltipItems: (spots) => spots
                     .map((s) => LineTooltipItem(
                           '${s.y.round()} mg/dL\n${s.x.toInt()}:${((s.x % 1) * 60).round().toString().padLeft(2, '0')}',
@@ -337,38 +423,206 @@ class _Stats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final fiable = resumen.gmiFiable;
+    final tieneGmi = resumen.gmi != null;
+
+    return Column(
       children: [
-        Expanded(
-          child: MetricaTile(
-            icono: Icons.show_chart_rounded,
-            valor: '${resumen.media ?? '—'}',
-            unidad: 'mg/dL',
-            etiqueta: 'Media',
-            color: _cEnRango,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: MetricaTile(
+                icono: Icons.show_chart_rounded,
+                valor: '${resumen.media ?? '—'}',
+                unidad: 'mg/dL',
+                etiqueta: 'Media',
+                color: _cEnRango,
+              ),
+            ),
+            const SizedBox(width: G.e3),
+            Expanded(
+              child: MetricaTile(
+                icono: fiable ? Icons.science_outlined : Icons.hourglass_empty_rounded,
+                // Cuando no es fiable, el número va con "~" para que se lea como
+                // aproximado y no se confunda con una A1c de laboratorio.
+                valor: !tieneGmi
+                    ? '—'
+                    : (fiable ? '' : '~') + resumen.gmi!.toStringAsFixed(1),
+                unidad: '%',
+                etiqueta: fiable ? 'GMI (HbA1c est.)' : 'GMI · orientativo',
+                color: fiable ? G.acentoCalorias : G.textoBajo,
+              ),
+            ),
+            const SizedBox(width: G.e3),
+            Expanded(
+              child: MetricaTile(
+                icono: Icons.equalizer_rounded,
+                valor: resumen.variabilidad == null
+                    ? '—'
+                    : '${resumen.variabilidad!.round()}',
+                unidad: '%',
+                etiqueta: 'Variabilidad',
+                color: G.acentoSueno,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: G.e3),
-        Expanded(
-          child: MetricaTile(
-            icono: Icons.science_outlined,
-            valor: resumen.gmi == null ? '—' : resumen.gmi!.toStringAsFixed(1),
-            unidad: '%',
-            etiqueta: 'GMI (HbA1c est.)',
-            color: G.acentoCalorias,
-          ),
-        ),
-        const SizedBox(width: G.e3),
-        Expanded(
-          child: MetricaTile(
-            icono: Icons.equalizer_rounded,
-            valor: resumen.variabilidad == null ? '—' : '${resumen.variabilidad!.round()}',
-            unidad: '%',
-            etiqueta: 'Variabilidad',
-            color: G.acentoSueno,
-          ),
-        ),
+        if (tieneGmi && !fiable) ...[
+          const SizedBox(height: G.e3),
+          _AvisoGmi(dias: resumen.diasCubiertos),
+        ],
       ],
+    );
+  }
+}
+
+/// Aviso de que el GMI aún no es representativo, con acceso a la explicación
+/// completa del cálculo. En una app que estima A1c, dejar claro que el número
+/// no es un dato clínico es tan importante como el número mismo.
+class _AvisoGmi extends StatelessWidget {
+  const _AvisoGmi({required this.dias});
+
+  final int dias;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => _mostrarExplicacion(context),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(G.e3),
+        decoration: BoxDecoration(
+          borderRadius: G.brS,
+          color: G.alerta.withValues(alpha: 0.10),
+          border: Border.all(color: G.alerta.withValues(alpha: 0.30)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline_rounded, size: 16, color: G.alerta),
+            const SizedBox(width: G.e2),
+            Expanded(
+              child: Text(
+                'GMI orientativo: calculado sobre '
+                '${dias <= 1 ? 'menos de un día' : '$dias días'}. '
+                'Necesita ~14 días para ser representativo.',
+                style: T.etiqueta.copyWith(fontSize: 11.5, height: 1.35),
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded, size: 16, color: G.alerta),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _mostrarExplicacion(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => const _HojaGmi(),
+    );
+  }
+}
+
+/// Explicación del cálculo del GMI, para que el número nunca se tome por una
+/// HbA1c de laboratorio.
+class _HojaGmi extends StatelessWidget {
+  const _HojaGmi();
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(G.radioL)),
+      child: Container(
+        color: G.fondoAlto,
+        padding: const EdgeInsets.fromLTRB(G.e5, G.e3, G.e5, G.e8),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: G.e5),
+                  decoration: BoxDecoration(
+                    color: G.cristalBordeAlto,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Text('¿Qué es el GMI?', style: T.titulo),
+              const SizedBox(height: G.e4),
+              Text(
+                'El GMI (Glucose Management Indicator) estima qué HbA1c '
+                'correspondería a tu glucosa media del sensor. Se calcula así:',
+                style: T.cuerpo,
+              ),
+              const SizedBox(height: G.e4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(G.e4),
+                decoration: BoxDecoration(
+                  borderRadius: G.brS,
+                  color: G.cristalRelleno,
+                  border: Border.all(color: G.cristalBorde),
+                ),
+                child: Text(
+                  'GMI (%) = 3,31 + 0,02392 × glucosa media (mg/dL)',
+                  style: T.cuerpoFuerte.copyWith(
+                    fontSize: 14,
+                    fontFeatures: const [],
+                  ),
+                ),
+              ),
+              const SizedBox(height: G.e2),
+              Text('Fórmula de Bergenstal et al., 2018.', style: T.etiqueta),
+              const SizedBox(height: G.e5),
+              _Punto(
+                texto: 'No es un análisis de sangre. La HbA1c de laboratorio '
+                    'mide otra cosa y puede diferir del GMI por tu biología.',
+              ),
+              _Punto(
+                texto: 'Necesita ~14 días continuos de sensor para ser '
+                    'representativo. Con pocos días es solo orientativo.',
+              ),
+              _Punto(
+                texto: 'Es informativo, no diagnóstico. No sustituye tu '
+                    'laboratorio ni el criterio de tu médico.',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Punto extends StatelessWidget {
+  const _Punto({required this.texto});
+
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: G.e3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            margin: const EdgeInsets.only(top: 7),
+            decoration: const BoxDecoration(color: G.acentoCalorias, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: G.e3),
+          Expanded(child: Text(texto, style: T.cuerpo)),
+        ],
+      ),
     );
   }
 }
@@ -497,6 +751,17 @@ class _BotonAnadir extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Quita el prefijo técnico "ErrorGlucosa:" para que el detalle se lea limpio.
+/// El caso de "sin sensor compartido" recibe además una pista accionable.
+String _mensajeError(Object e) {
+  var m = e.toString().replaceFirst(RegExp(r'^ErrorGlucosa:\s*'), '');
+  if (m.contains('sensor compartido')) {
+    m += '\n\nSi acabas de activar el compartir en LibreLink, puede tardar unos '
+        'minutos en propagarse. Reintenta en un rato.';
+  }
+  return m;
 }
 
 Color _colorDe(int mgdl, RangoObjetivo r) {

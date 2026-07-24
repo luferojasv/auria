@@ -215,6 +215,12 @@ class BaseDatos extends _$BaseDatos {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
+        // SQLite NO aplica claves foráneas si no se le pide expresamente. Sin
+        // este PRAGMA, el `onDelete: cascade` de las series queda decorativo y
+        // borrar una sesión deja sus series huérfanas en la base.
+        beforeOpen: (details) async {
+          await customStatement('PRAGMA foreign_keys = ON');
+        },
         onCreate: (m) async {
           await m.createAll();
           await _sembrarPlan();

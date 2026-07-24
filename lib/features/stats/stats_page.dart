@@ -132,7 +132,7 @@ class _Volumen extends ConsumerWidget {
                     titlesData: const FlTitlesData(show: false),
                     barTouchData: BarTouchData(
                       touchTooltipData: BarTouchTooltipData(
-                        getTooltipColor: (_) => G.fondoAlto,
+                        getTooltipColor: (_) => G.fondoInverso,
                         getTooltipItem: (group, _, rod, _) => BarTooltipItem(
                           '${rod.toY.round()} kg\n'
                           '${DateFormat('d MMM', 'es').format(lista[group.x].dia)}',
@@ -441,7 +441,7 @@ class _LineaSimple extends StatelessWidget {
         titlesData: const FlTitlesData(show: false),
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
-            getTooltipColor: (_) => G.fondoAlto,
+            getTooltipColor: (_) => G.fondoInverso,
             getTooltipItems: (spots) => spots
                 .map((s) => LineTooltipItem(
                       s.y >= 100 ? '${s.y.round()}' : s.y.toStringAsFixed(1),

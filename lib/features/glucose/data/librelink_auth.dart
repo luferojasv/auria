@@ -28,12 +28,15 @@ class LibreLinkAuth {
   /// (`api-eu`, `api-la`, `api-us`…), que se guarda para las siguientes llamadas.
   static const _hostBase = 'https://api.libreview.io';
 
-  // Cabeceras que el backend exige imitando a la app oficial. La versión hay
-  // que mantenerla al día: si LibreLinkUp la sube, el login empieza a fallar.
-  // TODO: confirmar versión vigente al validar con cuenta real.
+  // Cabeceras que el backend exige imitando a la app oficial. LibreLinkUp
+  // rechaza con 403 cualquier `version` por debajo de su mínimo vigente
+  // (comprobado: exige >= 4.16.0). Si Abbott vuelve a subirlo, el cuerpo del
+  // 403 trae la versión mínima nueva y basta con actualizar esta constante.
+  static const _version = '4.16.0';
+
   static Map<String, String> get _cabecerasBase => {
         'product': 'llu.android',
-        'version': '4.12.0',
+        'version': _version,
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       };

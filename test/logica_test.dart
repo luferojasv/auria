@@ -193,6 +193,30 @@ void main() {
       expect(r.ultima, isNull);
       expect(r.tiempoEnRango.muestras, 0);
     });
+
+    test('el GMI solo se marca fiable con ~14 días de datos', () {
+      LecturaGlucosa lg(DateTime m) => LecturaGlucosa(momento: m, mgdl: 100);
+      final base = DateTime(2026, 1, 1);
+
+      // Un día de datos: no fiable.
+      final unDia = ResumenGlucosa(
+        dia: base,
+        lecturas: [lg(base), lg(base.add(const Duration(hours: 20)))],
+        rango: const RangoObjetivo(),
+      );
+      expect(unDia.diasCubiertos, 1);
+      expect(unDia.gmiFiable, isFalse);
+      expect(unDia.gmi, isNotNull, reason: 'el número se calcula igual, solo no es fiable');
+
+      // 14 días: fiable.
+      final catorce = ResumenGlucosa(
+        dia: base,
+        lecturas: [lg(base), lg(base.add(const Duration(days: 14)))],
+        rango: const RangoObjetivo(),
+      );
+      expect(catorce.diasCubiertos, greaterThanOrEqualTo(14));
+      expect(catorce.gmiFiable, isTrue);
+    });
   });
 
   group('Datos de glucosa simulados', () {

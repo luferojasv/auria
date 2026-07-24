@@ -60,6 +60,8 @@ class _GlassCardState extends State<GlassCard> {
         borderRadius: r,
         // El relleno base mas, si hay tinte, un velo de color muy bajo.
         color: widget.resaltado ? G.cristalRellenoAlto : G.cristalRelleno,
+        // El tinte va contenido: en tema claro un velo de color fuerte vuelve
+        // las tarjetas caramelo y les quita el aspecto de vidrio.
         gradient: tinte == null
             ? G.gradienteCristal
             : LinearGradient(
@@ -67,10 +69,13 @@ class _GlassCardState extends State<GlassCard> {
                 end: Alignment.bottomRight,
                 colors: [
                   Color.alphaBlend(
-                    tinte.withValues(alpha: 0.16),
+                    tinte.withValues(alpha: 0.09),
                     G.brilloSuperior,
                   ),
-                  tinte.withValues(alpha: 0.04),
+                  Color.alphaBlend(
+                    tinte.withValues(alpha: 0.02),
+                    const Color(0x33FFFFFF),
+                  ),
                 ],
               ),
       ),
@@ -91,7 +96,8 @@ class _GlassCardState extends State<GlassCard> {
         foregroundPainter: _FiloEspecular(
           radio: r,
           color: tinte ?? Colors.white,
-          intensidad: widget.resaltado ? 1.0 : 0.7,
+          intensidad: widget.resaltado ? 1.0 : 0.8,
+          tintado: tinte != null,
         ),
         child: contenido,
       ),
@@ -128,23 +134,31 @@ class _GlassCardState extends State<GlassCard> {
   }
 }
 
-/// Traza el borde con un degradado que va de luz arriba-izquierda a nada
-/// abajo-derecha, imitando una fuente de luz unica.
+/// Traza el canto del vidrio.
+///
+/// En tema claro el reflejo va al revés que en oscuro: arriba-izquierda un
+/// **blanco casi opaco** (la luz rebotando en el canto) que se desvanece, y
+/// abajo-derecha una línea **oscura muy tenue** que separa la tarjeta del
+/// fondo. Solo con blanco, sobre un fondo claro, la tarjeta no tendría borde.
 class _FiloEspecular extends CustomPainter {
   _FiloEspecular({
     required this.radio,
     required this.color,
     required this.intensidad,
+    this.tintado = false,
   });
 
   final BorderRadius radio;
   final Color color;
   final double intensidad;
 
+  /// Si la tarjeta lleva acento, el canto se tiñe de él en vez de ser neutro.
+  final bool tintado;
+
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    // Media linea hacia dentro: si no, el clip se come la mitad del trazo.
+    // Media línea hacia dentro: si no, el clip se come la mitad del trazo.
     final rrect = radio.toRRect(rect).deflate(0.5);
 
     final p = Paint()
@@ -154,11 +168,13 @@ class _FiloEspecular extends CustomPainter {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          color.withValues(alpha: 0.44 * intensidad),
-          color.withValues(alpha: 0.10 * intensidad),
-          color.withValues(alpha: 0.16 * intensidad),
+          Colors.white.withValues(alpha: 0.95 * intensidad),
+          Colors.white.withValues(alpha: 0.30 * intensidad),
+          tintado
+              ? color.withValues(alpha: 0.30 * intensidad)
+              : const Color(0xFF14162B).withValues(alpha: 0.10 * intensidad),
         ],
-        stops: const [0.0, 0.5, 1.0],
+        stops: const [0.0, 0.45, 1.0],
       ).createShader(rect);
 
     canvas.drawRRect(rrect, p);
@@ -166,5 +182,8 @@ class _FiloEspecular extends CustomPainter {
 
   @override
   bool shouldRepaint(_FiloEspecular old) =>
-      old.color != color || old.intensidad != intensidad || old.radio != radio;
+      old.color != color ||
+      old.intensidad != intensidad ||
+      old.radio != radio ||
+      old.tintado != tintado;
 }

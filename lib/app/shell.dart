@@ -34,7 +34,7 @@ class AppShell extends StatelessWidget {
       icono: Icons.bloodtype_outlined,
       iconoActivo: Icons.bloodtype_rounded,
       etiqueta: 'Glucosa',
-      color: Color(0xFF34D399),
+      color: G.exito,
     ),
     DestinoNav(
       icono: Icons.insights_outlined,
@@ -44,24 +44,35 @@ class AppShell extends StatelessWidget {
     ),
   ];
 
+  /// Ancho máximo del contenido: Auria es una app móvil, así que en una ventana
+  /// ancha (escritorio) se muestra como una columna centrada en lugar de
+  /// estirarse. El fondo aurora sí ocupa toda la ventana, por detrás.
+  static const _anchoMovil = 520.0;
+
   @override
   Widget build(BuildContext context) {
     return AuroraBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        // El contenido pasa por debajo de la barra: el desenfoque necesita algo
-        // que desenfocar. Cada pantalla reserva el hueco con su propio padding
-        // inferior.
-        extendBody: true,
-        body: shell,
-        bottomNavigationBar: GlassBottomNav(
-          destinos: _destinos,
-          indice: shell.currentIndex,
-          onSelect: (i) => shell.goBranch(
-            i,
-            // Volver a tocar la pestana activa la devuelve a su raiz, que es lo
-            // que se espera al pulsar dos veces.
-            initialLocation: i == shell.currentIndex,
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _anchoMovil),
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            // El contenido pasa por debajo de la barra: el desenfoque necesita
+            // algo que desenfocar. Cada pantalla reserva el hueco con su propio
+            // padding inferior.
+            extendBody: true,
+            body: shell,
+            bottomNavigationBar: GlassBottomNav(
+              destinos: _destinos,
+              indice: shell.currentIndex,
+              onSelect: (i) => shell.goBranch(
+                i,
+                // Volver a tocar la pestaña activa la devuelve a su raíz, que es
+                // lo que se espera al pulsar dos veces.
+                initialLocation: i == shell.currentIndex,
+              ),
+            ),
           ),
         ),
       ),

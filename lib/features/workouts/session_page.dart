@@ -578,7 +578,9 @@ class _DetalleSerie extends ConsumerWidget {
                       child: Text(
                         '$r',
                         style: T.cuerpoFuerte.copyWith(
-                          color: serie.rpe == r ? Colors.white : G.textoMedio,
+                          color: serie.rpe == r ? G.acentoPulso : G.textoMedio,
+                          fontWeight:
+                              serie.rpe == r ? FontWeight.w700 : FontWeight.w600,
                         ),
                       ),
                     ),

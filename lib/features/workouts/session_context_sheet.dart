@@ -172,7 +172,8 @@ class _BotonAnimo extends StatelessWidget {
               animo.etiqueta,
               style: T.etiqueta.copyWith(
                 fontSize: 9,
-                color: seleccionado ? Colors.white : G.textoBajo,
+                color: seleccionado ? G.acentoEjercicio : G.textoBajo,
+                fontWeight: seleccionado ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],

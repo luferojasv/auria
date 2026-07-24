@@ -106,7 +106,7 @@ class _ChipDia extends StatelessWidget {
             Text(
               _iniciales[indice],
               style: T.overline.copyWith(
-                color: esHoy ? Colors.white : G.textoBajo,
+                color: esHoy ? color : G.textoBajo,
                 fontSize: 12,
               ),
             ),

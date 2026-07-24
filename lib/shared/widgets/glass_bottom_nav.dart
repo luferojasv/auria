@@ -120,7 +120,9 @@ class _Item extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = activo ? Colors.white : G.textoBajo;
+    // La píldora activa es un pastel del acento, así que el icono y la etiqueta
+    // toman ese mismo acento: en blanco no se leerían.
+    final color = activo ? destino.color : G.textoBajo;
 
     return Semantics(
       button: true,

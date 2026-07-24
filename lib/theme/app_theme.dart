@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 
 import 'glass_tokens.dart';
 
-/// Tema de la app. Solo oscuro: el glassmorphism depende de que haya luz de
-/// color detras del cristal, y sobre fondo claro el efecto se pierde.
+/// Tema de la app: claro. El cristal aquí es vidrio esmerilado blanco que
+/// aclara y difumina lo de detrás, y los focos de color de la aurora lo tiñen
+/// suavemente.
 ThemeData construirTema() {
-  const esquema = ColorScheme.dark(
+  const esquema = ColorScheme.light(
     primary: G.acentoEjercicio,
     secondary: G.acentoActividad,
     surface: G.fondoAlto,
@@ -44,7 +45,7 @@ ThemeData construirTema() {
       centerTitle: false,
       titleTextStyle: T.titulo,
       iconTheme: IconThemeData(color: G.textoAlto),
-      systemOverlayStyle: SystemUiOverlayStyle.light,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
     ),
 
     dividerTheme: const DividerThemeData(
@@ -81,9 +82,19 @@ ThemeData construirTema() {
       ),
     ),
 
+    // Auria es una app móvil: en una ventana ancha (desktop) los paneles no
+    // deben estirarse a todo lo ancho. Los acotamos a una columna centrada.
+    bottomSheetTheme: const BottomSheetThemeData(
+      constraints: BoxConstraints(maxWidth: 520),
+      backgroundColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
+    ),
+
+    // Snackbar oscuro sobre app clara: un aviso blanco se confundiría con el
+    // contenido y pasaría desapercibido.
     snackBarTheme: SnackBarThemeData(
-      backgroundColor: G.fondoAlto,
-      contentTextStyle: T.cuerpoFuerte,
+      backgroundColor: G.fondoInverso,
+      contentTextStyle: T.cuerpoFuerte.copyWith(color: Colors.white),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(borderRadius: G.brS),
     ),

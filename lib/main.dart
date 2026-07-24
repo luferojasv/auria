@@ -17,12 +17,15 @@ Future<void> main() async {
 
   // De borde a borde: el fondo aurora debe llegar bajo las barras del sistema.
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  // Tema claro: los iconos de las barras del sistema van OSCUROS para que se
+  // vean sobre el fondo luminoso de la app.
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
       systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
 
@@ -38,7 +41,7 @@ class AppLuisa extends StatelessWidget {
       title: 'Auria',
       debugShowCheckedModeBanner: false,
       theme: construirTema(),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.light,
       routerConfig: router,
       locale: const Locale('es'),
       supportedLocales: const [Locale('es'), Locale('en')],

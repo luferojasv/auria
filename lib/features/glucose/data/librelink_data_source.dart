@@ -72,7 +72,7 @@ class LibreLinkDataSource implements FuenteGlucosa {
           requiereReautenticar: true);
     }
     if (r.statusCode != 200) {
-      throw ErrorGlucosa('LibreLinkUp respondió ${r.statusCode}.');
+      throw ErrorGlucosa(_detalle('conexiones', r.statusCode, r.body));
     }
     final data = (json.decode(r.body) as Map<String, dynamic>)['data'] as List;
     if (data.isEmpty) {
@@ -134,9 +134,30 @@ class LibreLinkDataSource implements FuenteGlucosa {
       headers: await auth.cabecerasAuth(),
     );
     if (r.statusCode != 200) {
-      throw ErrorGlucosa('LibreLinkUp (graph) respondió ${r.statusCode}.');
+      throw ErrorGlucosa(_detalle('lecturas', r.statusCode, r.body));
     }
     return (json.decode(r.body) as Map<String, dynamic>)['data'] as Map<String, dynamic>;
+  }
+
+  /// Mensaje de error legible que conserva el motivo real de LibreLinkUp: su
+  /// cuerpo suele traer la causa (por ejemplo, la versión mínima exigida), y sin
+  /// él un "403" a secas no dice nada para depurar.
+  static String _detalle(String paso, int codigo, String cuerpo) {
+    var motivo = cuerpo.trim();
+    try {
+      final j = json.decode(cuerpo);
+      if (j is Map) {
+        final err = j['error'];
+        motivo = (err is Map ? err['message']?.toString() : err?.toString()) ??
+            j['message']?.toString() ??
+            cuerpo;
+      }
+    } catch (_) {
+      // cuerpo no-JSON: lo dejamos tal cual, recortado
+    }
+    if (motivo.length > 180) motivo = '${motivo.substring(0, 180)}…';
+    return 'LibreLinkUp rechazó la petición de $paso ($codigo). '
+        '${motivo.isEmpty ? '' : 'Motivo: $motivo'}';
   }
 
   @override

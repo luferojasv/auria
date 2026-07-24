@@ -1,9 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/db/database.dart';
 import '../features/exercises/data/exercise_repository.dart';
+import '../features/glucose/data/librelink_auth.dart';
+import '../features/glucose/data/librelink_data_source.dart';
 import '../features/glucose/data/mock_glucose_data_source.dart';
 import '../features/glucose/domain/glucose_data_source.dart';
 import '../features/glucose/domain/glucose_models.dart';
@@ -27,29 +27,71 @@ final fuenteSaludProvider = Provider<FuenteDatosSalud>((ref) {
   return MockHealthDataSource();
 });
 
-/// Proveedor de glucosa.
-///
-/// Aquí se cambia mock → LibreLinkUp: se sustituye por
-/// `LibreLinkDataSource(auth: LibreLinkAuth())` y la usuaria vincula con su
-/// email/clave desde ajustes. Ninguna pantalla habla con LibreLinkUp directamente.
+/// Autenticación con LibreLinkUp. La contraseña nunca se guarda: solo se usa
+/// para el login y lo que persiste es el token, en almacenamiento seguro.
+final libreLinkAuthProvider = Provider<LibreLinkAuth>((ref) => LibreLinkAuth());
+
+/// ¿Hay sesión activa con LibreLinkUp? Es lo que decide si la app muestra
+/// glucosa real o de demostración.
+final glucosaVinculadaProvider =
+    AsyncNotifierProvider<GlucosaVinculada, bool>(GlucosaVinculada.new);
+
+class GlucosaVinculada extends AsyncNotifier<bool> {
+  @override
+  Future<bool> build() => ref.watch(libreLinkAuthProvider).tieneSesion;
+
+  /// Inicia sesión. Devuelve `null` si todo fue bien, o el mensaje de error
+  /// para mostrarlo tal cual en la pantalla.
+  ///
+  /// No se invalida aquí `resumenGlucosaProvider`/`ultimaGlucosaProvider`: ambos
+  /// observan (vía `fuenteGlucosaProvider`) este mismo notifier, así que al
+  /// cambiar `state` se recalculan solos. Invalidarlos a mano desde aquí crea
+  /// una dependencia circular (resumen depende de este notifier, y este notifier
+  /// invalidaría a resumen).
+  Future<String?> vincular(String email, String clave) async {
+    state = const AsyncValue.loading();
+    try {
+      await ref.read(libreLinkAuthProvider).iniciarSesion(email, clave);
+      state = const AsyncValue.data(true);
+      return null;
+    } on ErrorGlucosa catch (e) {
+      state = const AsyncValue.data(false);
+      return e.mensaje;
+    } catch (e) {
+      state = const AsyncValue.data(false);
+      return 'No se pudo conectar con LibreLinkUp: $e';
+    }
+  }
+
+  Future<void> desvincular() async {
+    await ref.read(libreLinkAuthProvider).cerrarSesion();
+    state = const AsyncValue.data(false);
+  }
+}
+
+/// Proveedor de glucosa: real si hay sesión con LibreLinkUp, de demostración si
+/// no. Ninguna pantalla sabe cuál de los dos está detrás.
 final fuenteGlucosaProvider = Provider<FuenteGlucosa>((ref) {
+  final vinculada = ref.watch(glucosaVinculadaProvider).value ?? false;
+  if (vinculada) {
+    return LibreLinkDataSource(auth: ref.watch(libreLinkAuthProvider));
+  }
   return MockGlucoseDataSource();
 });
 
 /// Resumen de glucosa del día seleccionado.
+/// El auto-refresco no vive aquí sino en la pantalla de Glucosa (ver
+/// `AutoRefrescoGlucosa`), para que solo se consuma la API mientras esa
+/// pantalla está a la vista, y no en segundo plano.
 final resumenGlucosaProvider = FutureProvider<ResumenGlucosa>((ref) async {
   final fuente = ref.watch(fuenteGlucosaProvider);
   final dia = ref.watch(diaSeleccionadoProvider);
   return fuente.resumenDia(dia);
 });
 
-/// Última lectura (para el dashboard). Se refresca sola cada 2 min: una CGM
-/// entrega dato nuevo con esa cadencia.
+/// Última lectura, para el dashboard.
 final ultimaGlucosaProvider = FutureProvider<LecturaGlucosa?>((ref) async {
   final fuente = ref.watch(fuenteGlucosaProvider);
-  // Auto-refresco ligero.
-  final timer = Timer(const Duration(minutes: 2), () => ref.invalidateSelf());
-  ref.onDispose(timer.cancel);
   return fuente.ultima();
 });
 

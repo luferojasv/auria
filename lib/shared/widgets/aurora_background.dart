@@ -115,26 +115,31 @@ class _AuroraPainter extends CustomPainter {
       );
       final radio = lado * f.radio;
 
-      // Alpha bajo y caida cuadratica: los focos deben insinuarse, no dominar.
+      // Sobre fondo claro el alfa va mucho más bajo que en un tema oscuro: el
+      // color tiñe el blanco en lugar de iluminar el negro, y pasarse lo
+      // convierte en un manchón que resta legibilidad al texto.
       final pintura = Paint()
         ..shader = RadialGradient(
           colors: [
-            f.color.withValues(alpha: 0.34 * intensidad),
-            f.color.withValues(alpha: 0.14 * intensidad),
+            f.color.withValues(alpha: 0.20 * intensidad),
+            f.color.withValues(alpha: 0.08 * intensidad),
             f.color.withValues(alpha: 0.0),
           ],
-          stops: const [0.0, 0.42, 1.0],
+          stops: const [0.0, 0.45, 1.0],
         ).createShader(Rect.fromCircle(center: centro, radius: radio));
       canvas.drawCircle(centro, radio, pintura);
     }
 
-    // Vineta inferior: ancla la composicion y mejora el contraste de la barra
-    // de navegacion, que va justo encima.
+    // Velo blanco inferior: aclara la zona donde va la barra de navegación para
+    // que su cristal tenga algo luminoso detrás y el texto se lea.
     final vineta = Paint()
       ..shader = LinearGradient(
         begin: Alignment.center,
         end: Alignment.bottomCenter,
-        colors: [G.fondo.withValues(alpha: 0.0), G.fondo.withValues(alpha: 0.72)],
+        colors: [
+          const Color(0x00FFFFFF),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.55),
+        ],
       ).createShader(Offset.zero & size);
     canvas.drawRect(Offset.zero & size, vineta);
   }
