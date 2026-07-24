@@ -362,7 +362,13 @@ class _Grafica extends StatelessWidget {
               LineChartBarData(
                 spots: puntos,
                 isCurved: true,
-                curveSmoothness: 0.2,
+                // Curva más fluida, como la app oficial de LibreLinkUp. Los
+                // datos son los mismos (un punto cada ~5 min); solo se interpola
+                // el dibujo. `preventCurveOverShooting` evita que ese suavizado
+                // invente picos o valles falsos entre lecturas — crítico en
+                // glucosa: la línea nunca debe sugerir un valor que no ocurrió.
+                curveSmoothness: 0.4,
+                preventCurveOverShooting: true,
                 barWidth: 2.5,
                 dotData: const FlDotData(show: false),
                 color: _cEnRango,
