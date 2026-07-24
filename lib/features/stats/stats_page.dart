@@ -8,6 +8,7 @@ import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
 import '../health/domain/health_models.dart';
+import '../insights/insights_section.dart';
 import 'stats_providers.dart';
 
 class StatsPage extends ConsumerWidget {
@@ -48,6 +49,9 @@ class StatsPage extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(G.e4, 0, G.e4, 120),
           sliver: SliverList.list(
             children: const [
+              EncabezadoSeccion(titulo: 'Patrones'),
+              InsightsSection(),
+              EncabezadoSeccion(titulo: 'Volumen'),
               _Volumen(),
               EncabezadoSeccion(titulo: 'Reparto por músculo'),
               _PorMusculo(),
