@@ -24,6 +24,7 @@ dependencies:
   http: ^1.6.0
   # 0.20.2 exacto: es lo que fija flutter_localizations desde el SDK.
   intl: ^0.20.2
+  path_drawing: ^1.0.1
   shared_preferences: ^2.5.5
 
 dev_dependencies:
@@ -38,6 +39,7 @@ flutter:
 
   assets:
     - assets/data/exercises_es.json
+    - assets/data/muscle_map.json
 
   # Inter es una fuente variable: el mismo fichero sirve para todos los pesos.
   # Declarar cada peso apuntando al mismo asset hace que Flutter instancie el

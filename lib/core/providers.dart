@@ -215,3 +215,14 @@ final planDeHoyProvider = Provider<AsyncValue<DiaPlan?>>((ref) {
     return null;
   });
 });
+
+/// Rutinas reutilizables guardadas.
+final rutinasProvider = StreamProvider<List<Rutina>>((ref) {
+  return ref.watch(baseDatosProvider).verRutinas();
+});
+
+/// Ejercicios de una rutina concreta.
+final ejerciciosDeRutinaProvider =
+    StreamProvider.family<List<RutinaEjercicio>, int>((ref, rutinaId) {
+  return ref.watch(baseDatosProvider).verEjerciciosDeRutina(rutinaId);
+});

@@ -144,6 +144,52 @@ class _ChipDia extends StatelessWidget {
   }
 }
 
+/// Selector de la rutina asignada a un día: un desplegable con tus rutinas y
+/// una opción para dejarlo sin rutina.
+class _SelectorRutina extends ConsumerWidget {
+  const _SelectorRutina({required this.rutinaId, required this.onCambio});
+
+  final int? rutinaId;
+  final ValueChanged<int?> onCambio;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rutinas = ref.watch(rutinasProvider).value ?? const [];
+
+    if (rutinas.isEmpty) {
+      return Text(
+        'Aún no tienes rutinas. Créalas en "Mis rutinas" para poder asignarlas.',
+        style: T.etiqueta.copyWith(fontSize: 12),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: G.e4),
+      decoration: BoxDecoration(
+        borderRadius: G.brS,
+        color: G.cristalRelleno,
+        border: Border.all(color: G.cristalBorde),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<int?>(
+          value: rutinaId,
+          isExpanded: true,
+          dropdownColor: G.fondoAlto,
+          borderRadius: G.brS,
+          hint: Text('Sin rutina', style: T.cuerpo.copyWith(color: G.textoTenue)),
+          icon: const Icon(Icons.expand_more_rounded, color: G.textoBajo),
+          items: [
+            DropdownMenuItem(value: null, child: Text('Sin rutina', style: T.cuerpo)),
+            for (final r in rutinas)
+              DropdownMenuItem(value: r.id, child: Text(r.nombre, style: T.cuerpo)),
+          ],
+          onChanged: onCambio,
+        ),
+      ),
+    );
+  }
+}
+
 /// Card prominente: qué toca hoy, con acceso a empezar.
 class TarjetaHoyToca extends ConsumerWidget {
   const TarjetaHoyToca({super.key, required this.onEmpezar});
@@ -226,6 +272,7 @@ class _HojaEditarDiaState extends ConsumerState<_HojaEditarDia> {
   late final _titulo = TextEditingController(text: widget.actual?.titulo ?? '');
   late final _grupos = TextEditingController(text: widget.actual?.grupos ?? '');
   late bool _descanso = widget.actual?.descanso ?? false;
+  late int? _rutinaId = widget.actual?.rutinaId;
 
   @override
   void dispose() {
@@ -290,19 +337,35 @@ class _HojaEditarDiaState extends ConsumerState<_HojaEditarDia> {
                   ),
                 ],
               ),
-              const SizedBox(height: G.e5),
+
+              // Rutina asignada (solo si no es descanso): al empezar el entreno
+              // de este día, se precargan sus ejercicios.
+              if (!_descanso) ...[
+                const SizedBox(height: G.e5),
+                Text('Rutina', style: T.overline),
+                const SizedBox(height: G.e2),
+                _SelectorRutina(
+                  rutinaId: _rutinaId,
+                  onCambio: (id) => setState(() => _rutinaId = id),
+                ),
+              ],
+
+              const SizedBox(height: G.e6),
               BotonGlass(
                 texto: 'Guardar',
                 expandido: true,
                 onTap: () async {
-                  await ref.read(baseDatosProvider).guardarDiaPlan(
-                        widget.dia,
-                        titulo: _titulo.text.trim().isEmpty
-                            ? (_descanso ? 'Descanso' : 'Entreno')
-                            : _titulo.text.trim(),
-                        grupos: _grupos.text.trim(),
-                        descanso: _descanso,
-                      );
+                  final db = ref.read(baseDatosProvider);
+                  await db.guardarDiaPlan(
+                    widget.dia,
+                    titulo: _titulo.text.trim().isEmpty
+                        ? (_descanso ? 'Descanso' : 'Entreno')
+                        : _titulo.text.trim(),
+                    grupos: _grupos.text.trim(),
+                    descanso: _descanso,
+                  );
+                  // guardarDiaPlan no toca rutinaId; lo fijamos aparte.
+                  await db.asignarRutinaADia(widget.dia, _descanso ? null : _rutinaId);
                   if (context.mounted) Navigator.of(context).pop();
                 },
               ),

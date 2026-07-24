@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/providers.dart';
 import '../../data/db/database.dart';
+import 'routine_actions.dart';
 
 /// Acciones sobre sesiones de entrenamiento compartidas entre pantallas.
 ///
@@ -22,14 +23,19 @@ String nombrePorDefecto([DateTime? cuando]) {
   return 'Entreno · $momento ${DateFormat('d MMM', 'es').format(t)}';
 }
 
-/// Devuelve la sesion abierta, creandola si no existe. Si el plan semanal marca
-/// un entrenamiento para hoy, usa su titulo como nombre; si no, uno por hora.
+/// Devuelve la sesion abierta, creandola si no existe. Prioridad:
+/// 1) sesion ya en curso, 2) rutina asignada al dia (precarga sus ejercicios),
+/// 3) sesion vacia con el titulo del plan, 4) nombre por hora.
 Future<int> obtenerOCrearSesion(WidgetRef ref) async {
   final db = ref.read(baseDatosProvider);
   final abierta = await db.verSesionEnCurso().first;
   if (abierta != null) return abierta.id;
 
   final hoy = await db.planDe(DateTime.now().weekday);
+  if (hoy != null && !hoy.descanso && hoy.rutinaId != null) {
+    return empezarSesionDesdeRutina(ref, hoy.rutinaId!);
+  }
+
   final nombre = (hoy != null && !hoy.descanso && hoy.titulo.isNotEmpty)
       ? hoy.titulo
       : nombrePorDefecto();

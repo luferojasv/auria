@@ -160,6 +160,42 @@ void main() {
     });
   });
 
+  group('Rutinas', () {
+    test('crear rutina, añadir ejercicios y asignarla a un día', () async {
+      final rid = await db.crearRutina('Glúteos + Piernas');
+      await db.anadirEjercicioARutina(
+          rutinaId: rid, ejercicioId: '0001', orden: 0, seriesObjetivo: 4, repsObjetivo: 12);
+      await db.anadirEjercicioARutina(
+          rutinaId: rid, ejercicioId: '0007', orden: 1, seriesObjetivo: 3, repsObjetivo: 10);
+
+      final ejercicios = await db.ejerciciosDeRutinaUnaVez(rid);
+      expect(ejercicios, hasLength(2));
+      expect(ejercicios.first.seriesObjetivo, 4);
+
+      // Asignar a lunes.
+      await db.asignarRutinaADia(1, rid);
+      expect((await db.planDe(1))!.rutinaId, rid);
+
+      // Al borrar la rutina, el día queda sin ella (setNull) pero no se borra.
+      await db.borrarRutina(rid);
+      final lunes = await db.planDe(1);
+      expect(lunes, isNotNull, reason: 'el día del plan sigue existiendo');
+      expect(lunes!.rutinaId, isNull, reason: 'la referencia se pone a null');
+    });
+
+    test('reordenar reescribe el orden de los ejercicios', () async {
+      final rid = await db.crearRutina('Test');
+      final a = await db.anadirEjercicioARutina(rutinaId: rid, ejercicioId: '0001', orden: 0);
+      final b = await db.anadirEjercicioARutina(rutinaId: rid, ejercicioId: '0002', orden: 1);
+      final c = await db.anadirEjercicioARutina(rutinaId: rid, ejercicioId: '0003', orden: 2);
+
+      // Invertimos el orden.
+      await db.reordenarRutina([c, b, a]);
+      final tras = await db.ejerciciosDeRutinaUnaVez(rid);
+      expect(tras.map((e) => e.ejercicioId), ['0003', '0002', '0001']);
+    });
+  });
+
   group('Estadísticas', () {
     test('el volumen ignora calentamiento y series sin marcar', () async {
       final id = await db.crearSesion('Test');

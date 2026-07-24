@@ -152,6 +152,11 @@ class PlanSemanal extends Table {
   TextColumn get grupos => text().withDefault(const Constant(''))();
   BoolColumn get descanso => boolean().withDefault(const Constant(false))();
 
+  /// Rutina reutilizable asignada a este día, si la hay. Al borrar la rutina el
+  /// día se queda sin ella (setNull), no se borra el día. v4.
+  IntColumn get rutinaId =>
+      integer().nullable().references(Rutinas, #id, onDelete: KeyAction.setNull)();
+
   @override
   Set<Column> get primaryKey => {dia};
 }
@@ -211,7 +216,7 @@ class BaseDatos extends _$BaseDatos {
   BaseDatos.conEjecutor(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -239,6 +244,10 @@ class BaseDatos extends _$BaseDatos {
           // v2 -> v3: eventos de la línea de tiempo metabólica.
           if (desde < 3) {
             await m.createTable(eventos);
+          }
+          // v3 -> v4: rutina asignada a cada día del plan.
+          if (desde < 4) {
+            await m.addColumn(planSemanal, planSemanal.rutinaId);
           }
         },
       );
@@ -402,6 +411,106 @@ class BaseDatos extends _$BaseDatos {
         descanso: Value(descanso),
       ),
     );
+  }
+
+  /// Asigna (o quita, con null) la rutina de un día sin tocar sus otros campos.
+  Future<void> asignarRutinaADia(int dia, int? rutinaId) {
+    return (update(planSemanal)..where((p) => p.dia.equals(dia)))
+        .write(PlanSemanalCompanion(rutinaId: Value(rutinaId)));
+  }
+
+  // -------------------------------------------------------------- rutinas ---
+
+  Stream<List<Rutina>> verRutinas() {
+    return (select(rutinas)..orderBy([(r) => OrderingTerm.asc(r.nombre)]))
+        .watch();
+  }
+
+  Future<Rutina?> rutinaPorId(int id) =>
+      (select(rutinas)..where((r) => r.id.equals(id))).getSingleOrNull();
+
+  Future<int> crearRutina(String nombre, {String? notas}) {
+    return into(rutinas).insert(
+      RutinasCompanion.insert(
+        nombre: nombre,
+        creada: DateTime.now(),
+        notas: Value(notas),
+      ),
+    );
+  }
+
+  Future<void> renombrarRutina(int id, String nombre, {String? notas}) {
+    return (update(rutinas)..where((r) => r.id.equals(id))).write(
+      RutinasCompanion(nombre: Value(nombre), notas: Value(notas)),
+    );
+  }
+
+  Future<void> borrarRutina(int id) =>
+      (delete(rutinas)..where((r) => r.id.equals(id))).go();
+
+  /// Ejercicios de una rutina, en orden. `ejercicioId` referencia el catálogo
+  /// en assets (no una tabla), igual que en las series.
+  Stream<List<RutinaEjercicio>> verEjerciciosDeRutina(int rutinaId) {
+    return (select(rutinaEjercicios)
+          ..where((e) => e.rutinaId.equals(rutinaId))
+          ..orderBy([(e) => OrderingTerm.asc(e.orden)]))
+        .watch();
+  }
+
+  Future<List<RutinaEjercicio>> ejerciciosDeRutinaUnaVez(int rutinaId) {
+    return (select(rutinaEjercicios)
+          ..where((e) => e.rutinaId.equals(rutinaId))
+          ..orderBy([(e) => OrderingTerm.asc(e.orden)]))
+        .get();
+  }
+
+  Future<int> anadirEjercicioARutina({
+    required int rutinaId,
+    required String ejercicioId,
+    required int orden,
+    int seriesObjetivo = 3,
+    int repsObjetivo = 10,
+  }) {
+    return into(rutinaEjercicios).insert(
+      RutinaEjerciciosCompanion.insert(
+        rutinaId: rutinaId,
+        ejercicioId: ejercicioId,
+        orden: orden,
+        seriesObjetivo: Value(seriesObjetivo),
+        repsObjetivo: Value(repsObjetivo),
+      ),
+    );
+  }
+
+  Future<void> actualizarEjercicioRutina(
+    int id, {
+    int? seriesObjetivo,
+    int? repsObjetivo,
+  }) {
+    return (update(rutinaEjercicios)..where((e) => e.id.equals(id))).write(
+      RutinaEjerciciosCompanion(
+        seriesObjetivo:
+            seriesObjetivo == null ? const Value.absent() : Value(seriesObjetivo),
+        repsObjetivo:
+            repsObjetivo == null ? const Value.absent() : Value(repsObjetivo),
+      ),
+    );
+  }
+
+  Future<void> quitarEjercicioRutina(int id) =>
+      (delete(rutinaEjercicios)..where((e) => e.id.equals(id))).go();
+
+  /// Reordena: escribe el nuevo `orden` de cada fila de una vez.
+  Future<void> reordenarRutina(List<int> idsEnOrden) async {
+    await batch((b) {
+      for (var i = 0; i < idsEnOrden.length; i++) {
+        b.update(
+          rutinaEjercicios,
+          RutinaEjerciciosCompanion(orden: Value(i)),
+          where: (e) => e.id.equals(idsEnOrden[i]),
+        );
+      }
+    });
   }
 
   Future<void> borrarSerie(int id) =>

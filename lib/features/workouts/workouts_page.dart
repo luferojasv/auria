@@ -8,6 +8,8 @@ import '../../data/db/database.dart';
 import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
+import 'routine_actions.dart';
+import 'start_workout_sheet.dart';
 import 'weekly_plan.dart';
 import 'workout_actions.dart';
 
@@ -48,16 +50,15 @@ class WorkoutsPage extends ConsumerWidget {
               const EncabezadoSeccion(titulo: 'Tu semana'),
               const TiraSemana(),
 
+              _SeccionRutinas(),
+
               const EncabezadoSeccion(titulo: 'Sesión'),
               enCurso.when(
                 loading: () => const SizedBox(height: 88),
                 error: (e, _) => Text('$e', style: T.cuerpo),
                 data: (s) => s == null
                     ? _TarjetaEmpezar(
-                        onEmpezar: () async {
-                          final id = await obtenerOCrearSesion(ref);
-                          if (context.mounted) context.push('/sesion/$id');
-                        },
+                        onEmpezar: () => iniciarEntrenamiento(context, ref),
                       )
                     : _TarjetaEnCurso(sesion: s),
               ),
@@ -116,7 +117,8 @@ class _TarjetaEmpezar extends StatelessWidget {
           Text('Nada en marcha', style: T.seccion),
           const SizedBox(height: G.e1),
           Text(
-            'Empieza una sesión y ve añadiendo ejercicios desde el catálogo.',
+            'Empieza desde una de tus rutinas —con los ejercicios ya cargados— '
+            'o en blanco.',
             style: T.cuerpo,
           ),
           const SizedBox(height: G.e5),
@@ -278,6 +280,129 @@ class _FilaHistorial extends ConsumerWidget {
                   style: T.etiqueta.copyWith(fontSize: 11),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Sección "Mis rutinas" en la pestaña Entrenar: lista horizontal de rutinas
+/// reutilizables, con acceso a crear una nueva y a editar/empezar cada una.
+class _SeccionRutinas extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rutinas = ref.watch(rutinasProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        EncabezadoSeccion(
+          titulo: 'Mis rutinas',
+          accion: 'Nueva',
+          onAccion: () => crearRutinaYEditar(context, ref),
+        ),
+        rutinas.when(
+          loading: () => const SizedBox(height: 8),
+          error: (e, _) => Text('$e', style: T.cuerpo),
+          data: (lista) {
+            if (lista.isEmpty) {
+              return GlassCard(
+                desenfocar: false,
+                onTap: () => crearRutinaYEditar(context, ref),
+                child: Row(
+                  children: [
+                    const Icon(Icons.playlist_add_rounded, color: G.acentoEjercicio),
+                    const SizedBox(width: G.e3),
+                    Expanded(
+                      child: Text(
+                        'Crea tu primera rutina: elige ejercicios del catálogo, '
+                        'con su GIF, series y reps. Luego la asignas a los días.',
+                        style: T.cuerpo.copyWith(fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return Column(
+              children: [
+                for (final r in lista) _FilaRutina(rutina: r),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _FilaRutina extends ConsumerWidget {
+  const _FilaRutina({required this.rutina});
+
+  final Rutina rutina;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ejercicios = ref.watch(ejerciciosDeRutinaProvider(rutina.id)).value ?? const [];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: G.e3),
+      child: GlassCard(
+        desenfocar: false,
+        radio: G.brS,
+        padding: const EdgeInsets.all(G.e4),
+        onTap: () => context.push('/rutina/${rutina.id}'),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                borderRadius: G.brS,
+                color: G.acentoEjercicio.withValues(alpha: 0.14),
+              ),
+              child: const Icon(Icons.list_alt_rounded, size: 20, color: G.acentoEjercicio),
+            ),
+            const SizedBox(width: G.e4),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(rutina.nombre,
+                      style: T.cuerpoFuerte.copyWith(fontSize: 14),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    ejercicios.isEmpty
+                        ? 'Sin ejercicios · toca para armarla'
+                        : '${ejercicios.length} ejercicios',
+                    style: T.etiqueta.copyWith(fontSize: 11.5),
+                  ),
+                ],
+              ),
+            ),
+            // Empezar el entreno con esta rutina precargada.
+            GestureDetector(
+              onTap: ejercicios.isEmpty
+                  ? null
+                  : () async {
+                      final id = await empezarSesionDesdeRutina(ref, rutina.id);
+                      if (context.mounted) context.push('/sesion/$id');
+                    },
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.all(G.e2),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: ejercicios.isEmpty
+                      ? G.cristalRelleno
+                      : G.exito.withValues(alpha: 0.16),
+                ),
+                child: Icon(Icons.play_arrow_rounded,
+                    size: 20,
+                    color: ejercicios.isEmpty ? G.textoTenue : G.exito),
+              ),
             ),
           ],
         ),

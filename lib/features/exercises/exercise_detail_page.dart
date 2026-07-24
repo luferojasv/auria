@@ -6,6 +6,8 @@ import '../../core/providers.dart';
 import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
+import '../muscles/muscle_map_view.dart';
+import '../muscles/muscle_map.dart';
 import '../workouts/workout_actions.dart';
 import 'exercise_providers.dart';
 
@@ -66,6 +68,17 @@ class ExerciseDetailPage extends ConsumerWidget {
                   GlassCard(
                     child: Column(
                       children: [
+                        // Mapa muscular: principal en rosa, secundarios en violeta.
+                        MuscleMapView(
+                          primarios: {
+                            ?slugDeMusculo(ejercicio.objetivo),
+                          },
+                          secundarios: {
+                            ?slugDeMusculo(ejercicio.grupo),
+                            for (final s in ejercicio.secundarios) ?slugDeMusculo(s),
+                          },
+                        ),
+                        const Divider(height: G.e5),
                         _FilaMusculo(
                           etiqueta: 'Principal',
                           valor: ejercicio.objetivoEsLabel,

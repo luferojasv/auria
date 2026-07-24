@@ -4,6 +4,7 @@ import 'package:appluisa/features/glucose/data/mock_glucose_data_source.dart';
 import 'package:appluisa/features/glucose/domain/glucose_models.dart';
 import 'package:appluisa/features/health/data/mock_health_data_source.dart';
 import 'package:appluisa/features/health/domain/health_models.dart';
+import 'package:appluisa/features/muscles/muscle_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -255,6 +256,27 @@ void main() {
       for (final lec in r.lecturas) {
         expect(lec.momento.isAfter(DateTime.now()), isFalse);
       }
+    });
+  });
+
+  group('Mapa muscular', () {
+    test('traduce los músculos del dataset a slugs de MuscleMap', () {
+      expect(slugDeMusculo('pectorals'), 'chest');
+      expect(slugDeMusculo('glutes'), 'gluteal');
+      expect(slugDeMusculo('quads'), 'quadriceps');
+      expect(slugDeMusculo('delts'), 'deltoids');
+      // 'lats' y 'upper back' caen ambos en el mismo grupo dibujable.
+      expect(slugDeMusculo('lats'), 'upper-back');
+      expect(slugDeMusculo('upper back'), 'upper-back');
+    });
+
+    test('normaliza mayúsculas y espacios', () {
+      expect(slugDeMusculo('  BICEPS '), 'biceps');
+    });
+
+    test('devuelve null para lo que no se dibuja', () {
+      expect(slugDeMusculo('cardiovascular system'), isNull);
+      expect(slugDeMusculo(null), isNull);
     });
   });
 

@@ -1946,8 +1946,28 @@ class $PlanSemanalTable extends PlanSemanal
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _rutinaIdMeta = const VerificationMeta(
+    'rutinaId',
+  );
   @override
-  List<GeneratedColumn> get $columns => [dia, titulo, grupos, descanso];
+  late final GeneratedColumn<int> rutinaId = GeneratedColumn<int>(
+    'rutina_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rutinas (id) ON DELETE SET NULL',
+    ),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    dia,
+    titulo,
+    grupos,
+    descanso,
+    rutinaId,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1986,6 +2006,12 @@ class $PlanSemanalTable extends PlanSemanal
         descanso.isAcceptableOrUnknown(data['descanso']!, _descansoMeta),
       );
     }
+    if (data.containsKey('rutina_id')) {
+      context.handle(
+        _rutinaIdMeta,
+        rutinaId.isAcceptableOrUnknown(data['rutina_id']!, _rutinaIdMeta),
+      );
+    }
     return context;
   }
 
@@ -2011,6 +2037,10 @@ class $PlanSemanalTable extends PlanSemanal
         DriftSqlType.bool,
         data['${effectivePrefix}descanso'],
       )!,
+      rutinaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rutina_id'],
+      ),
     );
   }
 
@@ -2030,11 +2060,16 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
   /// propia.
   final String grupos;
   final bool descanso;
+
+  /// Rutina reutilizable asignada a este día, si la hay. Al borrar la rutina el
+  /// día se queda sin ella (setNull), no se borra el día. v4.
+  final int? rutinaId;
   const DiaPlan({
     required this.dia,
     required this.titulo,
     required this.grupos,
     required this.descanso,
+    this.rutinaId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2043,6 +2078,9 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
     map['titulo'] = Variable<String>(titulo);
     map['grupos'] = Variable<String>(grupos);
     map['descanso'] = Variable<bool>(descanso);
+    if (!nullToAbsent || rutinaId != null) {
+      map['rutina_id'] = Variable<int>(rutinaId);
+    }
     return map;
   }
 
@@ -2052,6 +2090,9 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
       titulo: Value(titulo),
       grupos: Value(grupos),
       descanso: Value(descanso),
+      rutinaId: rutinaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rutinaId),
     );
   }
 
@@ -2065,6 +2106,7 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
       titulo: serializer.fromJson<String>(json['titulo']),
       grupos: serializer.fromJson<String>(json['grupos']),
       descanso: serializer.fromJson<bool>(json['descanso']),
+      rutinaId: serializer.fromJson<int?>(json['rutinaId']),
     );
   }
   @override
@@ -2075,6 +2117,7 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
       'titulo': serializer.toJson<String>(titulo),
       'grupos': serializer.toJson<String>(grupos),
       'descanso': serializer.toJson<bool>(descanso),
+      'rutinaId': serializer.toJson<int?>(rutinaId),
     };
   }
 
@@ -2083,11 +2126,13 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
     String? titulo,
     String? grupos,
     bool? descanso,
+    Value<int?> rutinaId = const Value.absent(),
   }) => DiaPlan(
     dia: dia ?? this.dia,
     titulo: titulo ?? this.titulo,
     grupos: grupos ?? this.grupos,
     descanso: descanso ?? this.descanso,
+    rutinaId: rutinaId.present ? rutinaId.value : this.rutinaId,
   );
   DiaPlan copyWithCompanion(PlanSemanalCompanion data) {
     return DiaPlan(
@@ -2095,6 +2140,7 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
       titulo: data.titulo.present ? data.titulo.value : this.titulo,
       grupos: data.grupos.present ? data.grupos.value : this.grupos,
       descanso: data.descanso.present ? data.descanso.value : this.descanso,
+      rutinaId: data.rutinaId.present ? data.rutinaId.value : this.rutinaId,
     );
   }
 
@@ -2104,13 +2150,14 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
           ..write('dia: $dia, ')
           ..write('titulo: $titulo, ')
           ..write('grupos: $grupos, ')
-          ..write('descanso: $descanso')
+          ..write('descanso: $descanso, ')
+          ..write('rutinaId: $rutinaId')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(dia, titulo, grupos, descanso);
+  int get hashCode => Object.hash(dia, titulo, grupos, descanso, rutinaId);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2118,7 +2165,8 @@ class DiaPlan extends DataClass implements Insertable<DiaPlan> {
           other.dia == this.dia &&
           other.titulo == this.titulo &&
           other.grupos == this.grupos &&
-          other.descanso == this.descanso);
+          other.descanso == this.descanso &&
+          other.rutinaId == this.rutinaId);
 }
 
 class PlanSemanalCompanion extends UpdateCompanion<DiaPlan> {
@@ -2126,29 +2174,34 @@ class PlanSemanalCompanion extends UpdateCompanion<DiaPlan> {
   final Value<String> titulo;
   final Value<String> grupos;
   final Value<bool> descanso;
+  final Value<int?> rutinaId;
   const PlanSemanalCompanion({
     this.dia = const Value.absent(),
     this.titulo = const Value.absent(),
     this.grupos = const Value.absent(),
     this.descanso = const Value.absent(),
+    this.rutinaId = const Value.absent(),
   });
   PlanSemanalCompanion.insert({
     this.dia = const Value.absent(),
     required String titulo,
     this.grupos = const Value.absent(),
     this.descanso = const Value.absent(),
+    this.rutinaId = const Value.absent(),
   }) : titulo = Value(titulo);
   static Insertable<DiaPlan> custom({
     Expression<int>? dia,
     Expression<String>? titulo,
     Expression<String>? grupos,
     Expression<bool>? descanso,
+    Expression<int>? rutinaId,
   }) {
     return RawValuesInsertable({
       if (dia != null) 'dia': dia,
       if (titulo != null) 'titulo': titulo,
       if (grupos != null) 'grupos': grupos,
       if (descanso != null) 'descanso': descanso,
+      if (rutinaId != null) 'rutina_id': rutinaId,
     });
   }
 
@@ -2157,12 +2210,14 @@ class PlanSemanalCompanion extends UpdateCompanion<DiaPlan> {
     Value<String>? titulo,
     Value<String>? grupos,
     Value<bool>? descanso,
+    Value<int?>? rutinaId,
   }) {
     return PlanSemanalCompanion(
       dia: dia ?? this.dia,
       titulo: titulo ?? this.titulo,
       grupos: grupos ?? this.grupos,
       descanso: descanso ?? this.descanso,
+      rutinaId: rutinaId ?? this.rutinaId,
     );
   }
 
@@ -2181,6 +2236,9 @@ class PlanSemanalCompanion extends UpdateCompanion<DiaPlan> {
     if (descanso.present) {
       map['descanso'] = Variable<bool>(descanso.value);
     }
+    if (rutinaId.present) {
+      map['rutina_id'] = Variable<int>(rutinaId.value);
+    }
     return map;
   }
 
@@ -2190,7 +2248,8 @@ class PlanSemanalCompanion extends UpdateCompanion<DiaPlan> {
           ..write('dia: $dia, ')
           ..write('titulo: $titulo, ')
           ..write('grupos: $grupos, ')
-          ..write('descanso: $descanso')
+          ..write('descanso: $descanso, ')
+          ..write('rutinaId: $rutinaId')
           ..write(')'))
         .toString();
   }
@@ -3142,6 +3201,13 @@ abstract class _$BaseDatos extends GeneratedDatabase {
       ),
       result: [TableUpdate('rutina_ejercicios', kind: UpdateKind.delete)],
     ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'rutinas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('plan_semanal', kind: UpdateKind.update)],
+    ),
   ]);
 }
 
@@ -3961,6 +4027,24 @@ final class $$RutinasTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$PlanSemanalTable, List<DiaPlan>>
+  _planSemanalRefsTable(_$BaseDatos db) => MultiTypedResultKey.fromTable(
+    db.planSemanal,
+    aliasName: 'rutinas__id__plan_semanal__rutina_id',
+  );
+
+  $$PlanSemanalTableProcessedTableManager get planSemanalRefs {
+    final manager = $$PlanSemanalTableTableManager(
+      $_db,
+      $_db.planSemanal,
+    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_planSemanalRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$RutinasTableFilterComposer
@@ -4008,6 +4092,31 @@ class $$RutinasTableFilterComposer
           }) => $$RutinaEjerciciosTableFilterComposer(
             $db: $db,
             $table: $db.rutinaEjercicios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> planSemanalRefs(
+    Expression<bool> Function($$PlanSemanalTableFilterComposer f) f,
+  ) {
+    final $$PlanSemanalTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSemanal,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSemanalTableFilterComposer(
+            $db: $db,
+            $table: $db.planSemanal,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -4093,6 +4202,31 @@ class $$RutinasTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> planSemanalRefs<T extends Object>(
+    Expression<T> Function($$PlanSemanalTableAnnotationComposer a) f,
+  ) {
+    final $$PlanSemanalTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSemanal,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSemanalTableAnnotationComposer(
+            $db: $db,
+            $table: $db.planSemanal,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RutinasTableTableManager
@@ -4108,7 +4242,10 @@ class $$RutinasTableTableManager
           $$RutinasTableUpdateCompanionBuilder,
           (Rutina, $$RutinasTableReferences),
           Rutina,
-          PrefetchHooks Function({bool rutinaEjerciciosRefs})
+          PrefetchHooks Function({
+            bool rutinaEjerciciosRefs,
+            bool planSemanalRefs,
+          })
         > {
   $$RutinasTableTableManager(_$BaseDatos db, $RutinasTable table)
     : super(
@@ -4153,37 +4290,63 @@ class $$RutinasTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({rutinaEjerciciosRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (rutinaEjerciciosRefs) db.rutinaEjercicios,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (rutinaEjerciciosRefs)
-                    await $_getPrefetchedData<
-                      Rutina,
-                      $RutinasTable,
-                      RutinaEjercicio
-                    >(
-                      currentTable: table,
-                      referencedTable: $$RutinasTableReferences
-                          ._rutinaEjerciciosRefsTable(db),
-                      managerFromTypedResult: (p0) => $$RutinasTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).rutinaEjerciciosRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.rutinaId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({rutinaEjerciciosRefs = false, planSemanalRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (rutinaEjerciciosRefs) db.rutinaEjercicios,
+                    if (planSemanalRefs) db.planSemanal,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (rutinaEjerciciosRefs)
+                        await $_getPrefetchedData<
+                          Rutina,
+                          $RutinasTable,
+                          RutinaEjercicio
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RutinasTableReferences
+                              ._rutinaEjerciciosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RutinasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rutinaEjerciciosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rutinaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (planSemanalRefs)
+                        await $_getPrefetchedData<
+                          Rutina,
+                          $RutinasTable,
+                          DiaPlan
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RutinasTableReferences
+                              ._planSemanalRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RutinasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).planSemanalRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rutinaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -4200,7 +4363,7 @@ typedef $$RutinasTableProcessedTableManager =
       $$RutinasTableUpdateCompanionBuilder,
       (Rutina, $$RutinasTableReferences),
       Rutina,
-      PrefetchHooks Function({bool rutinaEjerciciosRefs})
+      PrefetchHooks Function({bool rutinaEjerciciosRefs, bool planSemanalRefs})
     >;
 typedef $$RutinaEjerciciosTableCreateCompanionBuilder =
     RutinaEjerciciosCompanion Function({
@@ -4553,6 +4716,7 @@ typedef $$PlanSemanalTableCreateCompanionBuilder =
       required String titulo,
       Value<String> grupos,
       Value<bool> descanso,
+      Value<int?> rutinaId,
     });
 typedef $$PlanSemanalTableUpdateCompanionBuilder =
     PlanSemanalCompanion Function({
@@ -4560,7 +4724,30 @@ typedef $$PlanSemanalTableUpdateCompanionBuilder =
       Value<String> titulo,
       Value<String> grupos,
       Value<bool> descanso,
+      Value<int?> rutinaId,
     });
+
+final class $$PlanSemanalTableReferences
+    extends BaseReferences<_$BaseDatos, $PlanSemanalTable, DiaPlan> {
+  $$PlanSemanalTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RutinasTable _rutinaIdTable(_$BaseDatos db) =>
+      db.rutinas.createAlias('plan_semanal__rutina_id__rutinas__id');
+
+  $$RutinasTableProcessedTableManager? get rutinaId {
+    final $_column = $_itemColumn<int>('rutina_id');
+    if ($_column == null) return null;
+    final manager = $$RutinasTableTableManager(
+      $_db,
+      $_db.rutinas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rutinaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$PlanSemanalTableFilterComposer
     extends Composer<_$BaseDatos, $PlanSemanalTable> {
@@ -4590,6 +4777,29 @@ class $$PlanSemanalTableFilterComposer
     column: $table.descanso,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$RutinasTableFilterComposer get rutinaId {
+    final $$RutinasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableFilterComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$PlanSemanalTableOrderingComposer
@@ -4620,6 +4830,29 @@ class $$PlanSemanalTableOrderingComposer
     column: $table.descanso,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$RutinasTableOrderingComposer get rutinaId {
+    final $$RutinasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableOrderingComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$PlanSemanalTableAnnotationComposer
@@ -4642,6 +4875,29 @@ class $$PlanSemanalTableAnnotationComposer
 
   GeneratedColumn<bool> get descanso =>
       $composableBuilder(column: $table.descanso, builder: (column) => column);
+
+  $$RutinasTableAnnotationComposer get rutinaId {
+    final $$RutinasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$PlanSemanalTableTableManager
@@ -4655,9 +4911,9 @@ class $$PlanSemanalTableTableManager
           $$PlanSemanalTableAnnotationComposer,
           $$PlanSemanalTableCreateCompanionBuilder,
           $$PlanSemanalTableUpdateCompanionBuilder,
-          (DiaPlan, BaseReferences<_$BaseDatos, $PlanSemanalTable, DiaPlan>),
+          (DiaPlan, $$PlanSemanalTableReferences),
           DiaPlan,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool rutinaId})
         > {
   $$PlanSemanalTableTableManager(_$BaseDatos db, $PlanSemanalTable table)
     : super(
@@ -4676,11 +4932,13 @@ class $$PlanSemanalTableTableManager
                 Value<String> titulo = const Value.absent(),
                 Value<String> grupos = const Value.absent(),
                 Value<bool> descanso = const Value.absent(),
+                Value<int?> rutinaId = const Value.absent(),
               }) => PlanSemanalCompanion(
                 dia: dia,
                 titulo: titulo,
                 grupos: grupos,
                 descanso: descanso,
+                rutinaId: rutinaId,
               ),
           createCompanionCallback:
               ({
@@ -4688,16 +4946,63 @@ class $$PlanSemanalTableTableManager
                 required String titulo,
                 Value<String> grupos = const Value.absent(),
                 Value<bool> descanso = const Value.absent(),
+                Value<int?> rutinaId = const Value.absent(),
               }) => PlanSemanalCompanion.insert(
                 dia: dia,
                 titulo: titulo,
                 grupos: grupos,
                 descanso: descanso,
+                rutinaId: rutinaId,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$PlanSemanalTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({rutinaId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (rutinaId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.rutinaId,
+                                referencedTable: $$PlanSemanalTableReferences
+                                    ._rutinaIdTable(db),
+                                referencedColumn: $$PlanSemanalTableReferences
+                                    ._rutinaIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -4712,9 +5017,9 @@ typedef $$PlanSemanalTableProcessedTableManager =
       $$PlanSemanalTableAnnotationComposer,
       $$PlanSemanalTableCreateCompanionBuilder,
       $$PlanSemanalTableUpdateCompanionBuilder,
-      (DiaPlan, BaseReferences<_$BaseDatos, $PlanSemanalTable, DiaPlan>),
+      (DiaPlan, $$PlanSemanalTableReferences),
       DiaPlan,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool rutinaId})
     >;
 typedef $$EventosTableCreateCompanionBuilder =
     EventosCompanion Function({

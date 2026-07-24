@@ -6,6 +6,7 @@ import '../features/exercises/exercise_detail_page.dart';
 import '../features/exercises/exercises_page.dart';
 import '../features/glucose/glucose_page.dart';
 import '../features/stats/stats_page.dart';
+import '../features/workouts/routine_editor_page.dart';
 import '../features/workouts/session_page.dart';
 import '../features/workouts/workouts_page.dart';
 import '../shared/widgets/aurora_background.dart';
@@ -79,6 +80,14 @@ final router = GoRouter(
         final id = int.tryParse(state.pathParameters['id'] ?? '');
         if (id == null) return _modal(const _RutaInvalida());
         return _modal(SessionPage(sesionId: id));
+      },
+    ),
+    GoRoute(
+      path: '/rutina/:id',
+      builder: (_, state) {
+        final id = int.tryParse(state.pathParameters['id'] ?? '');
+        if (id == null) return _modal(const _RutaInvalida());
+        return _modal(RoutineEditorPage(rutinaId: id));
       },
     ),
   ],

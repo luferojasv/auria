@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -162,7 +163,7 @@ class SessionPage extends ConsumerWidget {
 
 // --------------------------------------------------------------- un bloque ---
 
-class _BloqueEjercicio extends ConsumerWidget {
+class _BloqueEjercicio extends ConsumerStatefulWidget {
   const _BloqueEjercicio({
     required this.sesionId,
     required this.ejercicioId,
@@ -176,12 +177,27 @@ class _BloqueEjercicio extends ConsumerWidget {
   final bool editable;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_BloqueEjercicio> createState() => _BloqueEjercicioState();
+}
+
+class _BloqueEjercicioState extends ConsumerState<_BloqueEjercicio> {
+  bool _abierto = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final ejercicioId = widget.ejercicioId;
+    final series = widget.series;
+    final sesionId = widget.sesionId;
+    final editable = widget.editable;
     final ejercicio = ref.watch(ejercicioProvider(ejercicioId));
+    final repo = ref.watch(repositorioEjerciciosProvider).value;
     final nombre = ejercicio?.nombre ?? 'Ejercicio $ejercicioId';
     final sub = ejercicio == null
         ? ''
         : '${ejercicio.objetivoEsLabel} · ${ejercicio.equipoEsLabel}';
+    final urlGif = (ejercicio != null && repo != null)
+        ? repo.catalogo.animacionDe(ejercicio)
+        : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: G.e4),
@@ -190,33 +206,60 @@ class _BloqueEjercicio extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        nombre,
-                        style: T.cuerpoFuerte,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (sub.isNotEmpty)
-                        Text(sub, style: T.etiqueta.copyWith(fontSize: 11)),
-                    ],
+            // Cabecera tocable: despliega el GIF y las instrucciones.
+            GestureDetector(
+              onTap: () => setState(() => _abierto = !_abierto),
+              behavior: HitTestBehavior.opaque,
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(11),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      color: Colors.white,
+                      child: urlGif == null
+                          ? const Icon(Icons.fitness_center_rounded, color: Colors.black26)
+                          : CachedNetworkImage(
+                              imageUrl: urlGif,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, _, _) => const Icon(
+                                  Icons.fitness_center_rounded, color: Colors.black26),
+                            ),
+                    ),
                   ),
-                ),
-                GestureDetector(
-                  onTap: () => context.push('/ejercicio/$ejercicioId'),
-                  behavior: HitTestBehavior.opaque,
-                  child: const Padding(
-                    padding: EdgeInsets.all(G.e1),
-                    child: Icon(Icons.info_outline_rounded, size: 18, color: G.textoBajo),
+                  const SizedBox(width: G.e3),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(nombre,
+                            style: T.cuerpoFuerte,
+                            maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (sub.isNotEmpty)
+                          Text(sub, style: T.etiqueta.copyWith(fontSize: 11)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  AnimatedRotation(
+                    turns: _abierto ? 0.5 : 0,
+                    duration: G.rapido,
+                    child: const Icon(Icons.expand_more_rounded, size: 22, color: G.textoBajo),
+                  ),
+                ],
+              ),
             ),
+
+            // GIF grande + instrucciones, desplegable.
+            AnimatedCrossFade(
+              duration: G.normal,
+              sizeCurve: G.curvaSuave,
+              crossFadeState:
+                  _abierto ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+              firstChild: const SizedBox(width: double.infinity),
+              secondChild: _GuiaEjercicio(urlGif: urlGif, pasos: ejercicio?.pasos ?? const []),
+            ),
+
             const SizedBox(height: G.e4),
 
             // Cabecera de columnas.
@@ -276,6 +319,76 @@ class _BloqueEjercicio extends ConsumerWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// GIF animado grande + instrucciones del ejercicio, que se despliega dentro de
+/// la sesión para ver la técnica sin salir a la ficha.
+class _GuiaEjercicio extends StatelessWidget {
+  const _GuiaEjercicio({required this.urlGif, required this.pasos});
+
+  final String? urlGif;
+  final List<String> pasos;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: G.e4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (urlGif != null)
+            ClipRRect(
+              borderRadius: G.brS,
+              child: Container(
+                width: double.infinity,
+                height: 200,
+                color: Colors.white,
+                child: CachedNetworkImage(
+                  imageUrl: urlGif!,
+                  fit: BoxFit.contain,
+                  placeholder: (_, _) => const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black26),
+                    ),
+                  ),
+                  errorWidget: (_, _, _) => const Center(
+                    child: Icon(Icons.image_not_supported_outlined, color: Colors.black26),
+                  ),
+                ),
+              ),
+            ),
+          if (pasos.isNotEmpty) ...[
+            const SizedBox(height: G.e4),
+            for (var i = 0; i < pasos.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: G.e3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 20,
+                      height: 20,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: G.acentoEjercicio.withValues(alpha: 0.16),
+                      ),
+                      child: Text('${i + 1}',
+                          style: T.etiqueta.copyWith(
+                              fontSize: 10, color: G.acentoEjercicio, fontWeight: FontWeight.w700)),
+                    ),
+                    const SizedBox(width: G.e3),
+                    Expanded(child: Text(pasos[i], style: T.cuerpo.copyWith(fontSize: 13.5))),
+                  ],
+                ),
+              ),
+          ],
+        ],
       ),
     );
   }
