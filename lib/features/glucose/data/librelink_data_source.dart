@@ -160,12 +160,41 @@ class LibreLinkDataSource implements FuenteGlucosa {
         '${motivo.isEmpty ? '' : 'Motivo: $motivo'}';
   }
 
+  /// La lectura EN VIVO. LibreLinkUp la sirve en `connection.glucoseMeasurement`,
+  /// aparte del histórico, y es la única que va al minuto; el `graphData` llega
+  /// con ~30 min de retraso. Es la que muestra también la app oficial.
+  static LecturaGlucosa? _actualDe(Map<String, dynamic> data) {
+    final m = (data['connection'] as Map?)?['glucoseMeasurement'] as Map?;
+    if (m == null) return null;
+    return _lectura(m.cast<String, dynamic>(), conTendencia: true);
+  }
+
   @override
-  Future<LecturaGlucosa?> ultima() async {
-    final data = await _graph();
-    final actual = (data['connection'] as Map?)?['glucoseMeasurement'] as Map?;
-    if (actual == null) return null;
-    return _lectura(actual.cast<String, dynamic>(), conTendencia: true);
+  Future<LecturaGlucosa?> ultima() async => _actualDe(await _graph());
+
+  /// Combina el histórico (`graphData`) con la lectura en vivo, que suele ser
+  /// más reciente que el último punto del histórico. Sin esto, la gráfica y la
+  /// "última lectura" se quedaban ~30 min atrás respecto al sensor real.
+  List<LecturaGlucosa> _combinar(
+    Map<String, dynamic> data, {
+    required DateTime desde,
+    required DateTime hasta,
+  }) {
+    final serie = (data['graphData'] as List? ?? const [])
+        .map((m) => _lectura((m as Map).cast<String, dynamic>()))
+        .toList();
+
+    final actual = _actualDe(data);
+    if (actual != null &&
+        // Solo si es realmente más nueva que el último punto del histórico.
+        (serie.isEmpty || actual.momento.isAfter(serie.last.momento))) {
+      serie.add(actual);
+    }
+
+    return serie
+        .where((l) => !l.momento.isBefore(desde) && !l.momento.isAfter(hasta))
+        .toList()
+      ..sort((a, b) => a.momento.compareTo(b.momento));
   }
 
   @override
@@ -173,22 +202,17 @@ class LibreLinkDataSource implements FuenteGlucosa {
     required DateTime desde,
     required DateTime hasta,
   }) async {
-    // graphData trae la serie de las últimas ~12 h. Filtramos al rango pedido.
-    final data = await _graph();
-    final serie = (data['graphData'] as List? ?? const [])
-        .map((m) => _lectura((m as Map).cast<String, dynamic>()))
-        .where((l) => !l.momento.isBefore(desde) && !l.momento.isAfter(hasta))
-        .toList()
-      ..sort((a, b) => a.momento.compareTo(b.momento));
-    return serie;
+    return _combinar(await _graph(), desde: desde, hasta: hasta);
   }
 
   @override
   Future<ResumenGlucosa> resumenDia(DateTime dia) async {
     final ini = DateTime(dia.year, dia.month, dia.day);
+    // Una sola llamada de red para todo el día.
     return ResumenGlucosa(
       dia: ini,
-      lecturas: await lecturas(desde: ini, hasta: ini.add(const Duration(days: 1))),
+      lecturas: _combinar(await _graph(),
+          desde: ini, hasta: ini.add(const Duration(days: 1))),
       rango: const RangoObjetivo(),
     );
   }

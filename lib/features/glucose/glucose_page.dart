@@ -200,17 +200,58 @@ class _Ultima extends StatelessWidget {
     if (u == null) return const SizedBox.shrink();
     final color = _colorDe(u.mgdl, resumen.rango);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text('${u.mgdl}', style: T.titulo.copyWith(color: color, fontSize: 26)),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text('${u.mgdl}', style: T.titulo.copyWith(color: color, fontSize: 26)),
+            const SizedBox(width: 3),
+            Text('mg/dL', style: T.unidad),
+            if (u.tendencia != null) ...[
+              const SizedBox(width: 5),
+              Text(u.tendencia!.flecha, style: T.titulo.copyWith(color: color, fontSize: 20)),
+            ],
+          ],
+        ),
+        _Frescura(momento: u.momento),
+      ],
+    );
+  }
+}
+
+/// "Hace X min" de la última lectura. Si el dato pasa de ~15 min, se marca en
+/// alerta: en glucosa, tomar por actual una lectura vieja puede inducir a error,
+/// así que la antigüedad tiene que estar siempre a la vista.
+class _Frescura extends StatelessWidget {
+  const _Frescura({required this.momento});
+
+  final DateTime momento;
+
+  static const _caduca = Duration(minutes: 15);
+
+  @override
+  Widget build(BuildContext context) {
+    final edad = DateTime.now().difference(momento);
+    final vieja = edad > _caduca;
+    final color = vieja ? G.alerta : G.textoBajo;
+
+    final texto = edad.inMinutes < 1
+        ? 'ahora mismo'
+        : edad.inMinutes < 60
+            ? 'hace ${edad.inMinutes} min'
+            : 'hace ${edad.inHours} h ${edad.inMinutes % 60} min';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(vieja ? Icons.warning_amber_rounded : Icons.schedule_rounded,
+            size: 11, color: color),
         const SizedBox(width: 3),
-        Text('mg/dL', style: T.unidad),
-        if (u.tendencia != null) ...[
-          const SizedBox(width: 5),
-          Text(u.tendencia!.flecha, style: T.titulo.copyWith(color: color, fontSize: 20)),
-        ],
+        Text(texto, style: T.etiqueta.copyWith(fontSize: 10.5, color: color)),
       ],
     );
   }
