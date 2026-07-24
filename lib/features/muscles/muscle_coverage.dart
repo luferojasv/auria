@@ -50,3 +50,32 @@ final musculosQueFaltanProvider = Provider<Set<String>>((ref) {
   final cubiertos = {...c.primarios, ...c.secundarios};
   return musculosPrincipales.difference(cubiertos);
 });
+
+/// Cobertura de lo REALMENTE entrenado en los últimos 30 días (según las series
+/// hechas), no lo planeado. Permite comparar planeado vs hecho.
+final balanceRealProvider = FutureProvider<Cobertura>((ref) async {
+  ref.watch(historialProvider); // recalcular al registrar una sesión
+  final db = ref.watch(baseDatosProvider);
+  final repo = await ref.watch(repositorioEjerciciosProvider.future);
+  final ahora = DateTime.now();
+  final ids = await db.ejerciciosHechosEntre(
+    ahora.subtract(const Duration(days: 30)),
+    ahora,
+  );
+
+  final primarios = <String>{};
+  final secundarios = <String>{};
+  for (final id in ids) {
+    final e = repo.porId(id);
+    if (e == null) continue;
+    final p = slugDeMusculo(e.objetivo);
+    if (p != null) primarios.add(p);
+    final g = slugDeMusculo(e.grupo);
+    if (g != null) secundarios.add(g);
+    for (final s in e.secundarios) {
+      final ss = slugDeMusculo(s);
+      if (ss != null) secundarios.add(ss);
+    }
+  }
+  return (primarios: primarios, secundarios: secundarios);
+});

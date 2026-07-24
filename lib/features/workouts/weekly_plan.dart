@@ -27,6 +27,7 @@ class TiraSemana extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(planSemanalProvider);
+    final entrenados = ref.watch(diasEntrenadosSemanaProvider).value ?? const {};
     final hoy = DateTime.now().weekday; // 1..7
 
     return plan.when(
@@ -47,6 +48,7 @@ class TiraSemana extends ConsumerWidget {
                       dia: porDia[i],
                       indice: i - 1,
                       esHoy: i == hoy,
+                      entrenado: entrenados.contains(i),
                       onTap: () => _editarDia(context, ref, i, porDia[i]),
                     ),
                   ),
@@ -74,12 +76,16 @@ class _ChipDia extends StatelessWidget {
     required this.dia,
     required this.indice,
     required this.esHoy,
+    required this.entrenado,
     required this.onTap,
   });
 
   final DiaPlan? dia;
   final int indice;
   final bool esHoy;
+
+  /// True si esta semana ya se entrenó ese día.
+  final bool entrenado;
   final VoidCallback onTap;
 
   @override
@@ -112,10 +118,13 @@ class _ChipDia extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
+            // Check verde si ya entrenaste ese día; si no, el icono del plan.
             Icon(
-              descanso ? Icons.self_improvement_rounded : Icons.bolt_rounded,
+              entrenado
+                  ? Icons.check_circle_rounded
+                  : (descanso ? Icons.self_improvement_rounded : Icons.bolt_rounded),
               size: 16,
-              color: esHoy ? color : G.textoTenue,
+              color: entrenado ? G.exito : (esHoy ? color : G.textoTenue),
             ),
             const SizedBox(height: 5),
             // Solo la primera palabra del título, para que quepa en el chip.

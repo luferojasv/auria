@@ -194,6 +194,52 @@ void main() {
       final tras = await db.ejerciciosDeRutinaUnaVez(rid);
       expect(tras.map((e) => e.ejercicioId), ['0003', '0002', '0001']);
     });
+
+    test('la sesión recuerda de qué rutina salió', () async {
+      final rid = await db.crearRutina('Glúteos');
+      final sid = await db.crearSesion('Glúteos', rutinaId: rid);
+      final s = await db.verSesionEnCurso().first;
+      expect(s!.rutinaId, rid);
+
+      // Al borrar la rutina, la sesión se conserva pero pierde la referencia.
+      await db.terminarSesion(sid);
+      await db.borrarRutina(rid);
+      final hist = await db.verHistorial().first;
+      expect(hist, hasLength(1));
+      expect(hist.first.rutinaId, isNull);
+    });
+  });
+
+  group('Enlace por días', () {
+    test('sesionesEntre filtra por rango y solo terminadas', () async {
+      // Una terminada dentro del rango, una en curso, una fuera.
+      final dentro = await db.crearSesion('A');
+      await db.terminarSesion(dentro);
+      await db.crearSesion('En curso'); // sin terminar
+
+      final ahora = DateTime.now();
+      final res = await db.sesionesEntre(
+        ahora.subtract(const Duration(days: 1)),
+        ahora.add(const Duration(days: 1)),
+      );
+      expect(res, hasLength(1), reason: 'solo la terminada dentro del rango');
+      expect(res.first.nombre, 'A');
+    });
+
+    test('ejerciciosHechosEntre solo cuenta series marcadas', () async {
+      final sid = await db.crearSesion('S');
+      final hecha = await db.anadirSerie(sesionId: sid, ejercicioId: '0001', orden: 0);
+      await db.anadirSerie(sesionId: sid, ejercicioId: '0002', orden: 1); // sin marcar
+      await db.actualizarSerie(hecha, hecha: true);
+      await db.terminarSesion(sid);
+
+      final ahora = DateTime.now();
+      final ids = await db.ejerciciosHechosEntre(
+        ahora.subtract(const Duration(days: 1)),
+        ahora.add(const Duration(days: 1)),
+      );
+      expect(ids, ['0001'], reason: 'solo el ejercicio de la serie hecha');
+    });
   });
 
   group('Estadísticas', () {

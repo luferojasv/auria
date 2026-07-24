@@ -20,7 +20,8 @@ Future<int> empezarSesionDesdeRutina(WidgetRef ref, int rutinaId) async {
   if (abierta != null) return abierta.id;
 
   final rutina = await db.rutinaPorId(rutinaId);
-  final sesionId = await db.crearSesion(rutina?.nombre ?? 'Entrenamiento');
+  final sesionId =
+      await db.crearSesion(rutina?.nombre ?? 'Entrenamiento', rutinaId: rutinaId);
 
   final ejercicios = await db.ejerciciosDeRutinaUnaVez(rutinaId);
   var orden = 0;

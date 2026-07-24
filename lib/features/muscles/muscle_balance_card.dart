@@ -8,22 +8,38 @@ import 'muscle_coverage.dart';
 import 'muscle_map.dart';
 import 'muscle_map_view.dart';
 
-/// Tarjeta de equilibrio muscular: silueta con lo que trabajan TODAS tus
-/// rutinas, y los grupos que te faltan. Se oculta si aún no hay rutinas con
-/// ejercicios.
-class MuscleBalanceCard extends ConsumerWidget {
+/// Tarjeta de equilibrio muscular con dos modos:
+///  - **Planeado**: músculos que cubren todas tus rutinas.
+///  - **Hecho**: músculos que de verdad entrenaste (últimos 30 días).
+/// En ambos, marca los grupos principales que faltan.
+class MuscleBalanceCard extends ConsumerStatefulWidget {
   const MuscleBalanceCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cobertura = ref.watch(coberturaMuscularProvider);
-    final faltan = ref.watch(musculosQueFaltanProvider);
+  ConsumerState<MuscleBalanceCard> createState() => _MuscleBalanceCardState();
+}
 
-    // Sin nada configurado todavía: no mostramos la tarjeta.
-    if (cobertura.primarios.isEmpty && cobertura.secundarios.isEmpty) {
+class _MuscleBalanceCardState extends ConsumerState<MuscleBalanceCard> {
+  bool _hecho = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final planeado = ref.watch(coberturaMuscularProvider);
+    final real = ref.watch(balanceRealProvider).value;
+
+    final cobertura = _hecho
+        ? (real ?? (primarios: <String>{}, secundarios: <String>{}))
+        : planeado;
+
+    // Sin nada configurado ni entrenado: no mostramos la tarjeta.
+    if (planeado.primarios.isEmpty &&
+        planeado.secundarios.isEmpty &&
+        (real == null || (real.primarios.isEmpty && real.secundarios.isEmpty))) {
       return const SizedBox.shrink();
     }
 
+    final cubiertosSet = {...cobertura.primarios, ...cobertura.secundarios};
+    final faltan = musculosPrincipales.difference(cubiertosSet);
     final total = musculosPrincipales.length;
     final cubiertos = total - faltan.length;
 
@@ -35,6 +51,24 @@ class MuscleBalanceCard extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Toggle Planeado / Hecho.
+              Row(
+                children: [
+                  _Toggle(
+                    texto: 'Planeado',
+                    activo: !_hecho,
+                    onTap: () => setState(() => _hecho = false),
+                  ),
+                  const SizedBox(width: G.e2),
+                  _Toggle(
+                    texto: 'Hecho · 30d',
+                    activo: _hecho,
+                    onTap: () => setState(() => _hecho = true),
+                  ),
+                ],
+              ),
+              const SizedBox(height: G.e4),
+
               Row(
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
@@ -42,7 +76,10 @@ class MuscleBalanceCard extends ConsumerWidget {
                   Text('$cubiertos', style: T.display.copyWith(fontSize: 30)),
                   Text(' / $total', style: T.unidad),
                   const SizedBox(width: G.e2),
-                  Text('grupos que trabajas', style: T.etiqueta),
+                  Text(
+                    _hecho ? 'grupos entrenados' : 'grupos que trabajas',
+                    style: T.etiqueta,
+                  ),
                 ],
               ),
               const SizedBox(height: G.e3),
@@ -54,14 +91,24 @@ class MuscleBalanceCard extends ConsumerWidget {
               ),
 
               const SizedBox(height: G.e4),
-              if (faltan.isEmpty)
+              if (_hecho && cubiertosSet.isEmpty)
+                Text(
+                  'Aún no has registrado entrenamientos estos 30 días. Cuando '
+                  'completes sesiones, aquí verás lo que de verdad trabajaste.',
+                  style: T.cuerpo.copyWith(fontSize: 13),
+                )
+              else if (faltan.isEmpty)
                 Row(
                   children: [
                     const Icon(Icons.check_circle_rounded, size: 18, color: G.exito),
                     const SizedBox(width: G.e2),
                     Expanded(
-                      child: Text('¡Cubres todos los grupos principales!',
-                          style: T.cuerpoFuerte.copyWith(fontSize: 14, color: G.exito)),
+                      child: Text(
+                        _hecho
+                            ? '¡Entrenaste todos los grupos principales!'
+                            : '¡Cubres todos los grupos principales!',
+                        style: T.cuerpoFuerte.copyWith(fontSize: 14, color: G.exito),
+                      ),
                     ),
                   ],
                 )
@@ -70,7 +117,10 @@ class MuscleBalanceCard extends ConsumerWidget {
                   children: [
                     const Icon(Icons.error_outline_rounded, size: 16, color: G.alerta),
                     const SizedBox(width: G.e2),
-                    Text('Te falta trabajar', style: T.overline.copyWith(color: G.alerta)),
+                    Text(
+                      _hecho ? 'No entrenaste' : 'Te falta trabajar',
+                      style: T.overline.copyWith(color: G.alerta),
+                    ),
                   ],
                 ),
                 const SizedBox(height: G.e3),
@@ -95,12 +145,11 @@ class MuscleBalanceCard extends ConsumerWidget {
               ],
 
               const SizedBox(height: G.e3),
-              // Leyenda de colores.
               Row(
                 children: [
-                  _Punto(color: G.acentoPulso, texto: 'Principal'),
+                  _Leyenda(color: G.acentoPulso, texto: 'Principal'),
                   const SizedBox(width: G.e4),
-                  _Punto(color: G.acentoEjercicio.withValues(alpha: 0.5), texto: 'Secundario'),
+                  _Leyenda(color: G.acentoEjercicio.withValues(alpha: 0.5), texto: 'Secundario'),
                 ],
               ),
             ],
@@ -111,8 +160,41 @@ class MuscleBalanceCard extends ConsumerWidget {
   }
 }
 
-class _Punto extends StatelessWidget {
-  const _Punto({required this.color, required this.texto});
+class _Toggle extends StatelessWidget {
+  const _Toggle({required this.texto, required this.activo, required this.onTap});
+
+  final String texto;
+  final bool activo;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: G.e4, vertical: G.e2),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(999),
+          color: activo ? G.acentoEjercicio.withValues(alpha: 0.18) : G.cristalRelleno,
+          border: Border.all(
+            color: activo ? G.acentoEjercicio.withValues(alpha: 0.5) : G.cristalBorde,
+          ),
+        ),
+        child: Text(
+          texto,
+          style: T.etiqueta.copyWith(
+            color: activo ? G.acentoEjercicio : G.textoBajo,
+            fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Leyenda extends StatelessWidget {
+  const _Leyenda({required this.color, required this.texto});
 
   final Color color;
   final String texto;

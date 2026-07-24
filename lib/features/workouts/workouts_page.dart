@@ -89,9 +89,21 @@ class WorkoutsPage extends ConsumerWidget {
                       ),
                     );
                   }
+                  // Agrupamos por semana (lunes) para ver la constancia.
+                  final grupos = <DateTime, List<Sesion>>{};
+                  for (final s in lista) {
+                    final d = DateTime(s.inicio.year, s.inicio.month, s.inicio.day);
+                    final lunes = d.subtract(Duration(days: d.weekday - 1));
+                    grupos.putIfAbsent(lunes, () => []).add(s);
+                  }
+                  final semanas = grupos.keys.toList()
+                    ..sort((a, b) => b.compareTo(a));
                   return Column(
                     children: [
-                      for (final s in lista) _FilaHistorial(sesion: s),
+                      for (final lunes in semanas) ...[
+                        _EncabezadoSemana(lunes: lunes, dias: grupos[lunes]!.length),
+                        for (final s in grupos[lunes]!) _FilaHistorial(sesion: s),
+                      ],
                     ],
                   );
                 },
@@ -409,6 +421,50 @@ class _FilaRutina extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Encabezado de un grupo del historial: la semana y cuántos días se entrenó.
+class _EncabezadoSemana extends StatelessWidget {
+  const _EncabezadoSemana({required this.lunes, required this.dias});
+
+  final DateTime lunes;
+  final int dias;
+
+  @override
+  Widget build(BuildContext context) {
+    final n = DateTime.now();
+    final hoy = DateTime(n.year, n.month, n.day);
+    final lunesActual = hoy.subtract(Duration(days: hoy.weekday - 1));
+    final difSemanas = lunesActual.difference(lunes).inDays ~/ 7;
+
+    final titulo = switch (difSemanas) {
+      0 => 'Esta semana',
+      1 => 'Semana pasada',
+      _ => 'Semana del ${DateFormat('d MMM', 'es').format(lunes)}',
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(G.e1, G.e5, G.e1, G.e3),
+      child: Row(
+        children: [
+          Text(titulo, style: T.seccion),
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: G.e3, vertical: 3),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: G.exito.withValues(alpha: 0.14),
+            ),
+            child: Text(
+              '$dias ${dias == 1 ? "día" : "días"}',
+              style: T.etiqueta.copyWith(
+                  fontSize: 11, color: G.exito, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

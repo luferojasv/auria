@@ -226,3 +226,15 @@ final ejerciciosDeRutinaProvider =
     StreamProvider.family<List<RutinaEjercicio>, int>((ref, rutinaId) {
   return ref.watch(baseDatosProvider).verEjerciciosDeRutina(rutinaId);
 });
+
+/// Días de la semana actual (1=lunes … 7=domingo) en los que ya se entrenó.
+/// Se recalcula al cambiar el historial (nueva sesión terminada).
+final diasEntrenadosSemanaProvider = FutureProvider<Set<int>>((ref) async {
+  ref.watch(historialProvider);
+  final db = ref.watch(baseDatosProvider);
+  final n = DateTime.now();
+  final hoy = DateTime(n.year, n.month, n.day);
+  final lunes = hoy.subtract(Duration(days: hoy.weekday - 1));
+  final sesiones = await db.sesionesEntre(lunes, lunes.add(const Duration(days: 7)));
+  return sesiones.map((s) => s.inicio.weekday).toSet();
+});

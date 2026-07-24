@@ -3,6 +3,304 @@
 part of 'database.dart';
 
 // ignore_for_file: type=lint
+class $RutinasTable extends Rutinas with TableInfo<$RutinasTable, Rutina> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RutinasTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _nombreMeta = const VerificationMeta('nombre');
+  @override
+  late final GeneratedColumn<String> nombre = GeneratedColumn<String>(
+    'nombre',
+    aliasedName,
+    false,
+    additionalChecks: GeneratedColumn.checkTextLength(
+      minTextLength: 1,
+      maxTextLength: 80,
+    ),
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _notasMeta = const VerificationMeta('notas');
+  @override
+  late final GeneratedColumn<String> notas = GeneratedColumn<String>(
+    'notas',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _creadaMeta = const VerificationMeta('creada');
+  @override
+  late final GeneratedColumn<DateTime> creada = GeneratedColumn<DateTime>(
+    'creada',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, nombre, notas, creada];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rutinas';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Rutina> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('nombre')) {
+      context.handle(
+        _nombreMeta,
+        nombre.isAcceptableOrUnknown(data['nombre']!, _nombreMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nombreMeta);
+    }
+    if (data.containsKey('notas')) {
+      context.handle(
+        _notasMeta,
+        notas.isAcceptableOrUnknown(data['notas']!, _notasMeta),
+      );
+    }
+    if (data.containsKey('creada')) {
+      context.handle(
+        _creadaMeta,
+        creada.isAcceptableOrUnknown(data['creada']!, _creadaMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_creadaMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Rutina map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Rutina(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nombre: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nombre'],
+      )!,
+      notas: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notas'],
+      ),
+      creada: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creada'],
+      )!,
+    );
+  }
+
+  @override
+  $RutinasTable createAlias(String alias) {
+    return $RutinasTable(attachedDatabase, alias);
+  }
+}
+
+class Rutina extends DataClass implements Insertable<Rutina> {
+  final int id;
+  final String nombre;
+  final String? notas;
+  final DateTime creada;
+  const Rutina({
+    required this.id,
+    required this.nombre,
+    this.notas,
+    required this.creada,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['nombre'] = Variable<String>(nombre);
+    if (!nullToAbsent || notas != null) {
+      map['notas'] = Variable<String>(notas);
+    }
+    map['creada'] = Variable<DateTime>(creada);
+    return map;
+  }
+
+  RutinasCompanion toCompanion(bool nullToAbsent) {
+    return RutinasCompanion(
+      id: Value(id),
+      nombre: Value(nombre),
+      notas: notas == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notas),
+      creada: Value(creada),
+    );
+  }
+
+  factory Rutina.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Rutina(
+      id: serializer.fromJson<int>(json['id']),
+      nombre: serializer.fromJson<String>(json['nombre']),
+      notas: serializer.fromJson<String?>(json['notas']),
+      creada: serializer.fromJson<DateTime>(json['creada']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'nombre': serializer.toJson<String>(nombre),
+      'notas': serializer.toJson<String?>(notas),
+      'creada': serializer.toJson<DateTime>(creada),
+    };
+  }
+
+  Rutina copyWith({
+    int? id,
+    String? nombre,
+    Value<String?> notas = const Value.absent(),
+    DateTime? creada,
+  }) => Rutina(
+    id: id ?? this.id,
+    nombre: nombre ?? this.nombre,
+    notas: notas.present ? notas.value : this.notas,
+    creada: creada ?? this.creada,
+  );
+  Rutina copyWithCompanion(RutinasCompanion data) {
+    return Rutina(
+      id: data.id.present ? data.id.value : this.id,
+      nombre: data.nombre.present ? data.nombre.value : this.nombre,
+      notas: data.notas.present ? data.notas.value : this.notas,
+      creada: data.creada.present ? data.creada.value : this.creada,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Rutina(')
+          ..write('id: $id, ')
+          ..write('nombre: $nombre, ')
+          ..write('notas: $notas, ')
+          ..write('creada: $creada')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, nombre, notas, creada);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Rutina &&
+          other.id == this.id &&
+          other.nombre == this.nombre &&
+          other.notas == this.notas &&
+          other.creada == this.creada);
+}
+
+class RutinasCompanion extends UpdateCompanion<Rutina> {
+  final Value<int> id;
+  final Value<String> nombre;
+  final Value<String?> notas;
+  final Value<DateTime> creada;
+  const RutinasCompanion({
+    this.id = const Value.absent(),
+    this.nombre = const Value.absent(),
+    this.notas = const Value.absent(),
+    this.creada = const Value.absent(),
+  });
+  RutinasCompanion.insert({
+    this.id = const Value.absent(),
+    required String nombre,
+    this.notas = const Value.absent(),
+    required DateTime creada,
+  }) : nombre = Value(nombre),
+       creada = Value(creada);
+  static Insertable<Rutina> custom({
+    Expression<int>? id,
+    Expression<String>? nombre,
+    Expression<String>? notas,
+    Expression<DateTime>? creada,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nombre != null) 'nombre': nombre,
+      if (notas != null) 'notas': notas,
+      if (creada != null) 'creada': creada,
+    });
+  }
+
+  RutinasCompanion copyWith({
+    Value<int>? id,
+    Value<String>? nombre,
+    Value<String?>? notas,
+    Value<DateTime>? creada,
+  }) {
+    return RutinasCompanion(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      notas: notas ?? this.notas,
+      creada: creada ?? this.creada,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (nombre.present) {
+      map['nombre'] = Variable<String>(nombre.value);
+    }
+    if (notas.present) {
+      map['notas'] = Variable<String>(notas.value);
+    }
+    if (creada.present) {
+      map['creada'] = Variable<DateTime>(creada.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RutinasCompanion(')
+          ..write('id: $id, ')
+          ..write('nombre: $nombre, ')
+          ..write('notas: $notas, ')
+          ..write('creada: $creada')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $SesionesTable extends Sesiones with TableInfo<$SesionesTable, Sesion> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -99,6 +397,20 @@ class $SesionesTable extends Sesiones with TableInfo<$SesionesTable, Sesion> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _rutinaIdMeta = const VerificationMeta(
+    'rutinaId',
+  );
+  @override
+  late final GeneratedColumn<int> rutinaId = GeneratedColumn<int>(
+    'rutina_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES rutinas (id) ON DELETE SET NULL',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -110,6 +422,7 @@ class $SesionesTable extends Sesiones with TableInfo<$SesionesTable, Sesion> {
     animoAntes,
     energia,
     dolor,
+    rutinaId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -172,6 +485,12 @@ class $SesionesTable extends Sesiones with TableInfo<$SesionesTable, Sesion> {
         dolor.isAcceptableOrUnknown(data['dolor']!, _dolorMeta),
       );
     }
+    if (data.containsKey('rutina_id')) {
+      context.handle(
+        _rutinaIdMeta,
+        rutinaId.isAcceptableOrUnknown(data['rutina_id']!, _rutinaIdMeta),
+      );
+    }
     return context;
   }
 
@@ -219,6 +538,10 @@ class $SesionesTable extends Sesiones with TableInfo<$SesionesTable, Sesion> {
         DriftSqlType.int,
         data['${effectivePrefix}dolor'],
       ),
+      rutinaId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}rutina_id'],
+      ),
     );
   }
 
@@ -245,6 +568,11 @@ class Sesion extends DataClass implements Insertable<Sesion> {
   /// Energía y dolor muscular percibidos antes de empezar, escala 1-10.
   final int? energia;
   final int? dolor;
+
+  /// Rutina de la que salió esta sesión, si vino de una. Enlaza el plan → la
+  /// sesión registrada. setNull para conservar la sesión aunque borres la
+  /// rutina. v5.
+  final int? rutinaId;
   const Sesion({
     required this.id,
     required this.nombre,
@@ -255,6 +583,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
     this.animoAntes,
     this.energia,
     this.dolor,
+    this.rutinaId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -282,6 +611,9 @@ class Sesion extends DataClass implements Insertable<Sesion> {
     if (!nullToAbsent || dolor != null) {
       map['dolor'] = Variable<int>(dolor);
     }
+    if (!nullToAbsent || rutinaId != null) {
+      map['rutina_id'] = Variable<int>(rutinaId);
+    }
     return map;
   }
 
@@ -306,6 +638,9 @@ class Sesion extends DataClass implements Insertable<Sesion> {
       dolor: dolor == null && nullToAbsent
           ? const Value.absent()
           : Value(dolor),
+      rutinaId: rutinaId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(rutinaId),
     );
   }
 
@@ -326,6 +661,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
       ),
       energia: serializer.fromJson<int?>(json['energia']),
       dolor: serializer.fromJson<int?>(json['dolor']),
+      rutinaId: serializer.fromJson<int?>(json['rutinaId']),
     );
   }
   @override
@@ -343,6 +679,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
       ),
       'energia': serializer.toJson<int?>(energia),
       'dolor': serializer.toJson<int?>(dolor),
+      'rutinaId': serializer.toJson<int?>(rutinaId),
     };
   }
 
@@ -356,6 +693,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
     Value<Animo?> animoAntes = const Value.absent(),
     Value<int?> energia = const Value.absent(),
     Value<int?> dolor = const Value.absent(),
+    Value<int?> rutinaId = const Value.absent(),
   }) => Sesion(
     id: id ?? this.id,
     nombre: nombre ?? this.nombre,
@@ -366,6 +704,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
     animoAntes: animoAntes.present ? animoAntes.value : this.animoAntes,
     energia: energia.present ? energia.value : this.energia,
     dolor: dolor.present ? dolor.value : this.dolor,
+    rutinaId: rutinaId.present ? rutinaId.value : this.rutinaId,
   );
   Sesion copyWithCompanion(SesionesCompanion data) {
     return Sesion(
@@ -380,6 +719,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
           : this.animoAntes,
       energia: data.energia.present ? data.energia.value : this.energia,
       dolor: data.dolor.present ? data.dolor.value : this.dolor,
+      rutinaId: data.rutinaId.present ? data.rutinaId.value : this.rutinaId,
     );
   }
 
@@ -394,7 +734,8 @@ class Sesion extends DataClass implements Insertable<Sesion> {
           ..write('lugar: $lugar, ')
           ..write('animoAntes: $animoAntes, ')
           ..write('energia: $energia, ')
-          ..write('dolor: $dolor')
+          ..write('dolor: $dolor, ')
+          ..write('rutinaId: $rutinaId')
           ..write(')'))
         .toString();
   }
@@ -410,6 +751,7 @@ class Sesion extends DataClass implements Insertable<Sesion> {
     animoAntes,
     energia,
     dolor,
+    rutinaId,
   );
   @override
   bool operator ==(Object other) =>
@@ -423,7 +765,8 @@ class Sesion extends DataClass implements Insertable<Sesion> {
           other.lugar == this.lugar &&
           other.animoAntes == this.animoAntes &&
           other.energia == this.energia &&
-          other.dolor == this.dolor);
+          other.dolor == this.dolor &&
+          other.rutinaId == this.rutinaId);
 }
 
 class SesionesCompanion extends UpdateCompanion<Sesion> {
@@ -436,6 +779,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
   final Value<Animo?> animoAntes;
   final Value<int?> energia;
   final Value<int?> dolor;
+  final Value<int?> rutinaId;
   const SesionesCompanion({
     this.id = const Value.absent(),
     this.nombre = const Value.absent(),
@@ -446,6 +790,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
     this.animoAntes = const Value.absent(),
     this.energia = const Value.absent(),
     this.dolor = const Value.absent(),
+    this.rutinaId = const Value.absent(),
   });
   SesionesCompanion.insert({
     this.id = const Value.absent(),
@@ -457,6 +802,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
     this.animoAntes = const Value.absent(),
     this.energia = const Value.absent(),
     this.dolor = const Value.absent(),
+    this.rutinaId = const Value.absent(),
   }) : nombre = Value(nombre),
        inicio = Value(inicio);
   static Insertable<Sesion> custom({
@@ -469,6 +815,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
     Expression<int>? animoAntes,
     Expression<int>? energia,
     Expression<int>? dolor,
+    Expression<int>? rutinaId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -480,6 +827,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
       if (animoAntes != null) 'animo_antes': animoAntes,
       if (energia != null) 'energia': energia,
       if (dolor != null) 'dolor': dolor,
+      if (rutinaId != null) 'rutina_id': rutinaId,
     });
   }
 
@@ -493,6 +841,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
     Value<Animo?>? animoAntes,
     Value<int?>? energia,
     Value<int?>? dolor,
+    Value<int?>? rutinaId,
   }) {
     return SesionesCompanion(
       id: id ?? this.id,
@@ -504,6 +853,7 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
       animoAntes: animoAntes ?? this.animoAntes,
       energia: energia ?? this.energia,
       dolor: dolor ?? this.dolor,
+      rutinaId: rutinaId ?? this.rutinaId,
     );
   }
 
@@ -539,6 +889,9 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
     if (dolor.present) {
       map['dolor'] = Variable<int>(dolor.value);
     }
+    if (rutinaId.present) {
+      map['rutina_id'] = Variable<int>(rutinaId.value);
+    }
     return map;
   }
 
@@ -553,7 +906,8 @@ class SesionesCompanion extends UpdateCompanion<Sesion> {
           ..write('lugar: $lugar, ')
           ..write('animoAntes: $animoAntes, ')
           ..write('energia: $energia, ')
-          ..write('dolor: $dolor')
+          ..write('dolor: $dolor, ')
+          ..write('rutinaId: $rutinaId')
           ..write(')'))
         .toString();
   }
@@ -1171,304 +1525,6 @@ class SeriesCompanion extends UpdateCompanion<Serie> {
           ..write('tipo: $tipo, ')
           ..write('rpe: $rpe, ')
           ..write('descansoSeg: $descansoSeg')
-          ..write(')'))
-        .toString();
-  }
-}
-
-class $RutinasTable extends Rutinas with TableInfo<$RutinasTable, Rutina> {
-  @override
-  final GeneratedDatabase attachedDatabase;
-  final String? _alias;
-  $RutinasTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _idMeta = const VerificationMeta('id');
-  @override
-  late final GeneratedColumn<int> id = GeneratedColumn<int>(
-    'id',
-    aliasedName,
-    false,
-    hasAutoIncrement: true,
-    type: DriftSqlType.int,
-    requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways(
-      'PRIMARY KEY AUTOINCREMENT',
-    ),
-  );
-  static const VerificationMeta _nombreMeta = const VerificationMeta('nombre');
-  @override
-  late final GeneratedColumn<String> nombre = GeneratedColumn<String>(
-    'nombre',
-    aliasedName,
-    false,
-    additionalChecks: GeneratedColumn.checkTextLength(
-      minTextLength: 1,
-      maxTextLength: 80,
-    ),
-    type: DriftSqlType.string,
-    requiredDuringInsert: true,
-  );
-  static const VerificationMeta _notasMeta = const VerificationMeta('notas');
-  @override
-  late final GeneratedColumn<String> notas = GeneratedColumn<String>(
-    'notas',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
-  static const VerificationMeta _creadaMeta = const VerificationMeta('creada');
-  @override
-  late final GeneratedColumn<DateTime> creada = GeneratedColumn<DateTime>(
-    'creada',
-    aliasedName,
-    false,
-    type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
-  );
-  @override
-  List<GeneratedColumn> get $columns => [id, nombre, notas, creada];
-  @override
-  String get aliasedName => _alias ?? actualTableName;
-  @override
-  String get actualTableName => $name;
-  static const String $name = 'rutinas';
-  @override
-  VerificationContext validateIntegrity(
-    Insertable<Rutina> instance, {
-    bool isInserting = false,
-  }) {
-    final context = VerificationContext();
-    final data = instance.toColumns(true);
-    if (data.containsKey('id')) {
-      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
-    }
-    if (data.containsKey('nombre')) {
-      context.handle(
-        _nombreMeta,
-        nombre.isAcceptableOrUnknown(data['nombre']!, _nombreMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_nombreMeta);
-    }
-    if (data.containsKey('notas')) {
-      context.handle(
-        _notasMeta,
-        notas.isAcceptableOrUnknown(data['notas']!, _notasMeta),
-      );
-    }
-    if (data.containsKey('creada')) {
-      context.handle(
-        _creadaMeta,
-        creada.isAcceptableOrUnknown(data['creada']!, _creadaMeta),
-      );
-    } else if (isInserting) {
-      context.missing(_creadaMeta);
-    }
-    return context;
-  }
-
-  @override
-  Set<GeneratedColumn> get $primaryKey => {id};
-  @override
-  Rutina map(Map<String, dynamic> data, {String? tablePrefix}) {
-    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Rutina(
-      id: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
-        data['${effectivePrefix}id'],
-      )!,
-      nombre: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}nombre'],
-      )!,
-      notas: attachedDatabase.typeMapping.read(
-        DriftSqlType.string,
-        data['${effectivePrefix}notas'],
-      ),
-      creada: attachedDatabase.typeMapping.read(
-        DriftSqlType.dateTime,
-        data['${effectivePrefix}creada'],
-      )!,
-    );
-  }
-
-  @override
-  $RutinasTable createAlias(String alias) {
-    return $RutinasTable(attachedDatabase, alias);
-  }
-}
-
-class Rutina extends DataClass implements Insertable<Rutina> {
-  final int id;
-  final String nombre;
-  final String? notas;
-  final DateTime creada;
-  const Rutina({
-    required this.id,
-    required this.nombre,
-    this.notas,
-    required this.creada,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<int>(id);
-    map['nombre'] = Variable<String>(nombre);
-    if (!nullToAbsent || notas != null) {
-      map['notas'] = Variable<String>(notas);
-    }
-    map['creada'] = Variable<DateTime>(creada);
-    return map;
-  }
-
-  RutinasCompanion toCompanion(bool nullToAbsent) {
-    return RutinasCompanion(
-      id: Value(id),
-      nombre: Value(nombre),
-      notas: notas == null && nullToAbsent
-          ? const Value.absent()
-          : Value(notas),
-      creada: Value(creada),
-    );
-  }
-
-  factory Rutina.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Rutina(
-      id: serializer.fromJson<int>(json['id']),
-      nombre: serializer.fromJson<String>(json['nombre']),
-      notas: serializer.fromJson<String?>(json['notas']),
-      creada: serializer.fromJson<DateTime>(json['creada']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<int>(id),
-      'nombre': serializer.toJson<String>(nombre),
-      'notas': serializer.toJson<String?>(notas),
-      'creada': serializer.toJson<DateTime>(creada),
-    };
-  }
-
-  Rutina copyWith({
-    int? id,
-    String? nombre,
-    Value<String?> notas = const Value.absent(),
-    DateTime? creada,
-  }) => Rutina(
-    id: id ?? this.id,
-    nombre: nombre ?? this.nombre,
-    notas: notas.present ? notas.value : this.notas,
-    creada: creada ?? this.creada,
-  );
-  Rutina copyWithCompanion(RutinasCompanion data) {
-    return Rutina(
-      id: data.id.present ? data.id.value : this.id,
-      nombre: data.nombre.present ? data.nombre.value : this.nombre,
-      notas: data.notas.present ? data.notas.value : this.notas,
-      creada: data.creada.present ? data.creada.value : this.creada,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('Rutina(')
-          ..write('id: $id, ')
-          ..write('nombre: $nombre, ')
-          ..write('notas: $notas, ')
-          ..write('creada: $creada')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(id, nombre, notas, creada);
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is Rutina &&
-          other.id == this.id &&
-          other.nombre == this.nombre &&
-          other.notas == this.notas &&
-          other.creada == this.creada);
-}
-
-class RutinasCompanion extends UpdateCompanion<Rutina> {
-  final Value<int> id;
-  final Value<String> nombre;
-  final Value<String?> notas;
-  final Value<DateTime> creada;
-  const RutinasCompanion({
-    this.id = const Value.absent(),
-    this.nombre = const Value.absent(),
-    this.notas = const Value.absent(),
-    this.creada = const Value.absent(),
-  });
-  RutinasCompanion.insert({
-    this.id = const Value.absent(),
-    required String nombre,
-    this.notas = const Value.absent(),
-    required DateTime creada,
-  }) : nombre = Value(nombre),
-       creada = Value(creada);
-  static Insertable<Rutina> custom({
-    Expression<int>? id,
-    Expression<String>? nombre,
-    Expression<String>? notas,
-    Expression<DateTime>? creada,
-  }) {
-    return RawValuesInsertable({
-      if (id != null) 'id': id,
-      if (nombre != null) 'nombre': nombre,
-      if (notas != null) 'notas': notas,
-      if (creada != null) 'creada': creada,
-    });
-  }
-
-  RutinasCompanion copyWith({
-    Value<int>? id,
-    Value<String>? nombre,
-    Value<String?>? notas,
-    Value<DateTime>? creada,
-  }) {
-    return RutinasCompanion(
-      id: id ?? this.id,
-      nombre: nombre ?? this.nombre,
-      notas: notas ?? this.notas,
-      creada: creada ?? this.creada,
-    );
-  }
-
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    if (id.present) {
-      map['id'] = Variable<int>(id.value);
-    }
-    if (nombre.present) {
-      map['nombre'] = Variable<String>(nombre.value);
-    }
-    if (notas.present) {
-      map['notas'] = Variable<String>(notas.value);
-    }
-    if (creada.present) {
-      map['creada'] = Variable<DateTime>(creada.value);
-    }
-    return map;
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('RutinasCompanion(')
-          ..write('id: $id, ')
-          ..write('nombre: $nombre, ')
-          ..write('notas: $notas, ')
-          ..write('creada: $creada')
           ..write(')'))
         .toString();
   }
@@ -3161,9 +3217,9 @@ class PesosCorporalesCompanion extends UpdateCompanion<PesoCorporal> {
 abstract class _$BaseDatos extends GeneratedDatabase {
   _$BaseDatos(QueryExecutor e) : super(e);
   $BaseDatosManager get managers => $BaseDatosManager(this);
+  late final $RutinasTable rutinas = $RutinasTable(this);
   late final $SesionesTable sesiones = $SesionesTable(this);
   late final $SeriesTable series = $SeriesTable(this);
-  late final $RutinasTable rutinas = $RutinasTable(this);
   late final $RutinaEjerciciosTable rutinaEjercicios = $RutinaEjerciciosTable(
     this,
   );
@@ -3177,9 +3233,9 @@ abstract class _$BaseDatos extends GeneratedDatabase {
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
+    rutinas,
     sesiones,
     series,
-    rutinas,
     rutinaEjercicios,
     planSemanal,
     eventos,
@@ -3187,6 +3243,13 @@ abstract class _$BaseDatos extends GeneratedDatabase {
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'rutinas',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('sesiones', kind: UpdateKind.update)],
+    ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
         'sesiones',
@@ -3211,6 +3274,482 @@ abstract class _$BaseDatos extends GeneratedDatabase {
   ]);
 }
 
+typedef $$RutinasTableCreateCompanionBuilder =
+    RutinasCompanion Function({
+      Value<int> id,
+      required String nombre,
+      Value<String?> notas,
+      required DateTime creada,
+    });
+typedef $$RutinasTableUpdateCompanionBuilder =
+    RutinasCompanion Function({
+      Value<int> id,
+      Value<String> nombre,
+      Value<String?> notas,
+      Value<DateTime> creada,
+    });
+
+final class $$RutinasTableReferences
+    extends BaseReferences<_$BaseDatos, $RutinasTable, Rutina> {
+  $$RutinasTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SesionesTable, List<Sesion>> _sesionesRefsTable(
+    _$BaseDatos db,
+  ) => MultiTypedResultKey.fromTable(
+    db.sesiones,
+    aliasName: 'rutinas__id__sesiones__rutina_id',
+  );
+
+  $$SesionesTableProcessedTableManager get sesionesRefs {
+    final manager = $$SesionesTableTableManager(
+      $_db,
+      $_db.sesiones,
+    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_sesionesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RutinaEjerciciosTable, List<RutinaEjercicio>>
+  _rutinaEjerciciosRefsTable(_$BaseDatos db) => MultiTypedResultKey.fromTable(
+    db.rutinaEjercicios,
+    aliasName: 'rutinas__id__rutina_ejercicios__rutina_id',
+  );
+
+  $$RutinaEjerciciosTableProcessedTableManager get rutinaEjerciciosRefs {
+    final manager = $$RutinaEjerciciosTableTableManager(
+      $_db,
+      $_db.rutinaEjercicios,
+    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _rutinaEjerciciosRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$PlanSemanalTable, List<DiaPlan>>
+  _planSemanalRefsTable(_$BaseDatos db) => MultiTypedResultKey.fromTable(
+    db.planSemanal,
+    aliasName: 'rutinas__id__plan_semanal__rutina_id',
+  );
+
+  $$PlanSemanalTableProcessedTableManager get planSemanalRefs {
+    final manager = $$PlanSemanalTableTableManager(
+      $_db,
+      $_db.planSemanal,
+    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_planSemanalRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RutinasTableFilterComposer
+    extends Composer<_$BaseDatos, $RutinasTable> {
+  $$RutinasTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notas => $composableBuilder(
+    column: $table.notas,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creada => $composableBuilder(
+    column: $table.creada,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> sesionesRefs(
+    Expression<bool> Function($$SesionesTableFilterComposer f) f,
+  ) {
+    final $$SesionesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sesiones,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SesionesTableFilterComposer(
+            $db: $db,
+            $table: $db.sesiones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> rutinaEjerciciosRefs(
+    Expression<bool> Function($$RutinaEjerciciosTableFilterComposer f) f,
+  ) {
+    final $$RutinaEjerciciosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.rutinaEjercicios,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinaEjerciciosTableFilterComposer(
+            $db: $db,
+            $table: $db.rutinaEjercicios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> planSemanalRefs(
+    Expression<bool> Function($$PlanSemanalTableFilterComposer f) f,
+  ) {
+    final $$PlanSemanalTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSemanal,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSemanalTableFilterComposer(
+            $db: $db,
+            $table: $db.planSemanal,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RutinasTableOrderingComposer
+    extends Composer<_$BaseDatos, $RutinasTable> {
+  $$RutinasTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get nombre => $composableBuilder(
+    column: $table.nombre,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notas => $composableBuilder(
+    column: $table.notas,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creada => $composableBuilder(
+    column: $table.creada,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RutinasTableAnnotationComposer
+    extends Composer<_$BaseDatos, $RutinasTable> {
+  $$RutinasTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nombre =>
+      $composableBuilder(column: $table.nombre, builder: (column) => column);
+
+  GeneratedColumn<String> get notas =>
+      $composableBuilder(column: $table.notas, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get creada =>
+      $composableBuilder(column: $table.creada, builder: (column) => column);
+
+  Expression<T> sesionesRefs<T extends Object>(
+    Expression<T> Function($$SesionesTableAnnotationComposer a) f,
+  ) {
+    final $$SesionesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.sesiones,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SesionesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.sesiones,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> rutinaEjerciciosRefs<T extends Object>(
+    Expression<T> Function($$RutinaEjerciciosTableAnnotationComposer a) f,
+  ) {
+    final $$RutinaEjerciciosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.rutinaEjercicios,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinaEjerciciosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rutinaEjercicios,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> planSemanalRefs<T extends Object>(
+    Expression<T> Function($$PlanSemanalTableAnnotationComposer a) f,
+  ) {
+    final $$PlanSemanalTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.planSemanal,
+      getReferencedColumn: (t) => t.rutinaId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$PlanSemanalTableAnnotationComposer(
+            $db: $db,
+            $table: $db.planSemanal,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RutinasTableTableManager
+    extends
+        RootTableManager<
+          _$BaseDatos,
+          $RutinasTable,
+          Rutina,
+          $$RutinasTableFilterComposer,
+          $$RutinasTableOrderingComposer,
+          $$RutinasTableAnnotationComposer,
+          $$RutinasTableCreateCompanionBuilder,
+          $$RutinasTableUpdateCompanionBuilder,
+          (Rutina, $$RutinasTableReferences),
+          Rutina,
+          PrefetchHooks Function({
+            bool sesionesRefs,
+            bool rutinaEjerciciosRefs,
+            bool planSemanalRefs,
+          })
+        > {
+  $$RutinasTableTableManager(_$BaseDatos db, $RutinasTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RutinasTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RutinasTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RutinasTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> nombre = const Value.absent(),
+                Value<String?> notas = const Value.absent(),
+                Value<DateTime> creada = const Value.absent(),
+              }) => RutinasCompanion(
+                id: id,
+                nombre: nombre,
+                notas: notas,
+                creada: creada,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String nombre,
+                Value<String?> notas = const Value.absent(),
+                required DateTime creada,
+              }) => RutinasCompanion.insert(
+                id: id,
+                nombre: nombre,
+                notas: notas,
+                creada: creada,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RutinasTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                sesionesRefs = false,
+                rutinaEjerciciosRefs = false,
+                planSemanalRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (sesionesRefs) db.sesiones,
+                    if (rutinaEjerciciosRefs) db.rutinaEjercicios,
+                    if (planSemanalRefs) db.planSemanal,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (sesionesRefs)
+                        await $_getPrefetchedData<
+                          Rutina,
+                          $RutinasTable,
+                          Sesion
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RutinasTableReferences
+                              ._sesionesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RutinasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).sesionesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rutinaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (rutinaEjerciciosRefs)
+                        await $_getPrefetchedData<
+                          Rutina,
+                          $RutinasTable,
+                          RutinaEjercicio
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RutinasTableReferences
+                              ._rutinaEjerciciosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RutinasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rutinaEjerciciosRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rutinaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (planSemanalRefs)
+                        await $_getPrefetchedData<
+                          Rutina,
+                          $RutinasTable,
+                          DiaPlan
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RutinasTableReferences
+                              ._planSemanalRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RutinasTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).planSemanalRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.rutinaId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RutinasTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BaseDatos,
+      $RutinasTable,
+      Rutina,
+      $$RutinasTableFilterComposer,
+      $$RutinasTableOrderingComposer,
+      $$RutinasTableAnnotationComposer,
+      $$RutinasTableCreateCompanionBuilder,
+      $$RutinasTableUpdateCompanionBuilder,
+      (Rutina, $$RutinasTableReferences),
+      Rutina,
+      PrefetchHooks Function({
+        bool sesionesRefs,
+        bool rutinaEjerciciosRefs,
+        bool planSemanalRefs,
+      })
+    >;
 typedef $$SesionesTableCreateCompanionBuilder =
     SesionesCompanion Function({
       Value<int> id,
@@ -3222,6 +3761,7 @@ typedef $$SesionesTableCreateCompanionBuilder =
       Value<Animo?> animoAntes,
       Value<int?> energia,
       Value<int?> dolor,
+      Value<int?> rutinaId,
     });
 typedef $$SesionesTableUpdateCompanionBuilder =
     SesionesCompanion Function({
@@ -3234,11 +3774,29 @@ typedef $$SesionesTableUpdateCompanionBuilder =
       Value<Animo?> animoAntes,
       Value<int?> energia,
       Value<int?> dolor,
+      Value<int?> rutinaId,
     });
 
 final class $$SesionesTableReferences
     extends BaseReferences<_$BaseDatos, $SesionesTable, Sesion> {
   $$SesionesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RutinasTable _rutinaIdTable(_$BaseDatos db) =>
+      db.rutinas.createAlias('sesiones__rutina_id__rutinas__id');
+
+  $$RutinasTableProcessedTableManager? get rutinaId {
+    final $_column = $_itemColumn<int>('rutina_id');
+    if ($_column == null) return null;
+    final manager = $$RutinasTableTableManager(
+      $_db,
+      $_db.rutinas,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_rutinaIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
 
   static MultiTypedResultKey<$SeriesTable, List<Serie>> _seriesRefsTable(
     _$BaseDatos db,
@@ -3314,6 +3872,29 @@ class $$SesionesTableFilterComposer
     column: $table.dolor,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$RutinasTableFilterComposer get rutinaId {
+    final $$RutinasTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableFilterComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 
   Expression<bool> seriesRefs(
     Expression<bool> Function($$SeriesTableFilterComposer f) f,
@@ -3394,6 +3975,29 @@ class $$SesionesTableOrderingComposer
     column: $table.dolor,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$RutinasTableOrderingComposer get rutinaId {
+    final $$RutinasTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableOrderingComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$SesionesTableAnnotationComposer
@@ -3435,6 +4039,29 @@ class $$SesionesTableAnnotationComposer
   GeneratedColumn<int> get dolor =>
       $composableBuilder(column: $table.dolor, builder: (column) => column);
 
+  $$RutinasTableAnnotationComposer get rutinaId {
+    final $$RutinasTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.rutinaId,
+      referencedTable: $db.rutinas,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RutinasTableAnnotationComposer(
+            $db: $db,
+            $table: $db.rutinas,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
   Expression<T> seriesRefs<T extends Object>(
     Expression<T> Function($$SeriesTableAnnotationComposer a) f,
   ) {
@@ -3474,7 +4101,7 @@ class $$SesionesTableTableManager
           $$SesionesTableUpdateCompanionBuilder,
           (Sesion, $$SesionesTableReferences),
           Sesion,
-          PrefetchHooks Function({bool seriesRefs})
+          PrefetchHooks Function({bool rutinaId, bool seriesRefs})
         > {
   $$SesionesTableTableManager(_$BaseDatos db, $SesionesTable table)
     : super(
@@ -3498,6 +4125,7 @@ class $$SesionesTableTableManager
                 Value<Animo?> animoAntes = const Value.absent(),
                 Value<int?> energia = const Value.absent(),
                 Value<int?> dolor = const Value.absent(),
+                Value<int?> rutinaId = const Value.absent(),
               }) => SesionesCompanion(
                 id: id,
                 nombre: nombre,
@@ -3508,6 +4136,7 @@ class $$SesionesTableTableManager
                 animoAntes: animoAntes,
                 energia: energia,
                 dolor: dolor,
+                rutinaId: rutinaId,
               ),
           createCompanionCallback:
               ({
@@ -3520,6 +4149,7 @@ class $$SesionesTableTableManager
                 Value<Animo?> animoAntes = const Value.absent(),
                 Value<int?> energia = const Value.absent(),
                 Value<int?> dolor = const Value.absent(),
+                Value<int?> rutinaId = const Value.absent(),
               }) => SesionesCompanion.insert(
                 id: id,
                 nombre: nombre,
@@ -3530,6 +4160,7 @@ class $$SesionesTableTableManager
                 animoAntes: animoAntes,
                 energia: energia,
                 dolor: dolor,
+                rutinaId: rutinaId,
               ),
           withReferenceMapper: (p0) => p0
               .map(
@@ -3539,11 +4170,42 @@ class $$SesionesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({seriesRefs = false}) {
+          prefetchHooksCallback: ({rutinaId = false, seriesRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [if (seriesRefs) db.series],
-              addJoins: null,
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (rutinaId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.rutinaId,
+                                referencedTable: $$SesionesTableReferences
+                                    ._rutinaIdTable(db),
+                                referencedColumn: $$SesionesTableReferences
+                                    ._rutinaIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (seriesRefs)
@@ -3577,7 +4239,7 @@ typedef $$SesionesTableProcessedTableManager =
       $$SesionesTableUpdateCompanionBuilder,
       (Sesion, $$SesionesTableReferences),
       Sesion,
-      PrefetchHooks Function({bool seriesRefs})
+      PrefetchHooks Function({bool rutinaId, bool seriesRefs})
     >;
 typedef $$SeriesTableCreateCompanionBuilder =
     SeriesCompanion Function({
@@ -3988,382 +4650,6 @@ typedef $$SeriesTableProcessedTableManager =
       (Serie, $$SeriesTableReferences),
       Serie,
       PrefetchHooks Function({bool sesionId})
-    >;
-typedef $$RutinasTableCreateCompanionBuilder =
-    RutinasCompanion Function({
-      Value<int> id,
-      required String nombre,
-      Value<String?> notas,
-      required DateTime creada,
-    });
-typedef $$RutinasTableUpdateCompanionBuilder =
-    RutinasCompanion Function({
-      Value<int> id,
-      Value<String> nombre,
-      Value<String?> notas,
-      Value<DateTime> creada,
-    });
-
-final class $$RutinasTableReferences
-    extends BaseReferences<_$BaseDatos, $RutinasTable, Rutina> {
-  $$RutinasTableReferences(super.$_db, super.$_table, super.$_typedResult);
-
-  static MultiTypedResultKey<$RutinaEjerciciosTable, List<RutinaEjercicio>>
-  _rutinaEjerciciosRefsTable(_$BaseDatos db) => MultiTypedResultKey.fromTable(
-    db.rutinaEjercicios,
-    aliasName: 'rutinas__id__rutina_ejercicios__rutina_id',
-  );
-
-  $$RutinaEjerciciosTableProcessedTableManager get rutinaEjerciciosRefs {
-    final manager = $$RutinaEjerciciosTableTableManager(
-      $_db,
-      $_db.rutinaEjercicios,
-    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(
-      _rutinaEjerciciosRefsTable($_db),
-    );
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-
-  static MultiTypedResultKey<$PlanSemanalTable, List<DiaPlan>>
-  _planSemanalRefsTable(_$BaseDatos db) => MultiTypedResultKey.fromTable(
-    db.planSemanal,
-    aliasName: 'rutinas__id__plan_semanal__rutina_id',
-  );
-
-  $$PlanSemanalTableProcessedTableManager get planSemanalRefs {
-    final manager = $$PlanSemanalTableTableManager(
-      $_db,
-      $_db.planSemanal,
-    ).filter((f) => f.rutinaId.id.sqlEquals($_itemColumn<int>('id')!));
-
-    final cache = $_typedResult.readTableOrNull(_planSemanalRefsTable($_db));
-    return ProcessedTableManager(
-      manager.$state.copyWith(prefetchedData: cache),
-    );
-  }
-}
-
-class $$RutinasTableFilterComposer
-    extends Composer<_$BaseDatos, $RutinasTable> {
-  $$RutinasTableFilterComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnFilters<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get nombre => $composableBuilder(
-    column: $table.nombre,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<String> get notas => $composableBuilder(
-    column: $table.notas,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  ColumnFilters<DateTime> get creada => $composableBuilder(
-    column: $table.creada,
-    builder: (column) => ColumnFilters(column),
-  );
-
-  Expression<bool> rutinaEjerciciosRefs(
-    Expression<bool> Function($$RutinaEjerciciosTableFilterComposer f) f,
-  ) {
-    final $$RutinaEjerciciosTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.rutinaEjercicios,
-      getReferencedColumn: (t) => t.rutinaId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$RutinaEjerciciosTableFilterComposer(
-            $db: $db,
-            $table: $db.rutinaEjercicios,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<bool> planSemanalRefs(
-    Expression<bool> Function($$PlanSemanalTableFilterComposer f) f,
-  ) {
-    final $$PlanSemanalTableFilterComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.planSemanal,
-      getReferencedColumn: (t) => t.rutinaId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlanSemanalTableFilterComposer(
-            $db: $db,
-            $table: $db.planSemanal,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$RutinasTableOrderingComposer
-    extends Composer<_$BaseDatos, $RutinasTable> {
-  $$RutinasTableOrderingComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  ColumnOrderings<int> get id => $composableBuilder(
-    column: $table.id,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get nombre => $composableBuilder(
-    column: $table.nombre,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<String> get notas => $composableBuilder(
-    column: $table.notas,
-    builder: (column) => ColumnOrderings(column),
-  );
-
-  ColumnOrderings<DateTime> get creada => $composableBuilder(
-    column: $table.creada,
-    builder: (column) => ColumnOrderings(column),
-  );
-}
-
-class $$RutinasTableAnnotationComposer
-    extends Composer<_$BaseDatos, $RutinasTable> {
-  $$RutinasTableAnnotationComposer({
-    required super.$db,
-    required super.$table,
-    super.joinBuilder,
-    super.$addJoinBuilderToRootComposer,
-    super.$removeJoinBuilderFromRootComposer,
-  });
-  GeneratedColumn<int> get id =>
-      $composableBuilder(column: $table.id, builder: (column) => column);
-
-  GeneratedColumn<String> get nombre =>
-      $composableBuilder(column: $table.nombre, builder: (column) => column);
-
-  GeneratedColumn<String> get notas =>
-      $composableBuilder(column: $table.notas, builder: (column) => column);
-
-  GeneratedColumn<DateTime> get creada =>
-      $composableBuilder(column: $table.creada, builder: (column) => column);
-
-  Expression<T> rutinaEjerciciosRefs<T extends Object>(
-    Expression<T> Function($$RutinaEjerciciosTableAnnotationComposer a) f,
-  ) {
-    final $$RutinaEjerciciosTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.rutinaEjercicios,
-      getReferencedColumn: (t) => t.rutinaId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$RutinaEjerciciosTableAnnotationComposer(
-            $db: $db,
-            $table: $db.rutinaEjercicios,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-
-  Expression<T> planSemanalRefs<T extends Object>(
-    Expression<T> Function($$PlanSemanalTableAnnotationComposer a) f,
-  ) {
-    final $$PlanSemanalTableAnnotationComposer composer = $composerBuilder(
-      composer: this,
-      getCurrentColumn: (t) => t.id,
-      referencedTable: $db.planSemanal,
-      getReferencedColumn: (t) => t.rutinaId,
-      builder:
-          (
-            joinBuilder, {
-            $addJoinBuilderToRootComposer,
-            $removeJoinBuilderFromRootComposer,
-          }) => $$PlanSemanalTableAnnotationComposer(
-            $db: $db,
-            $table: $db.planSemanal,
-            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
-            joinBuilder: joinBuilder,
-            $removeJoinBuilderFromRootComposer:
-                $removeJoinBuilderFromRootComposer,
-          ),
-    );
-    return f(composer);
-  }
-}
-
-class $$RutinasTableTableManager
-    extends
-        RootTableManager<
-          _$BaseDatos,
-          $RutinasTable,
-          Rutina,
-          $$RutinasTableFilterComposer,
-          $$RutinasTableOrderingComposer,
-          $$RutinasTableAnnotationComposer,
-          $$RutinasTableCreateCompanionBuilder,
-          $$RutinasTableUpdateCompanionBuilder,
-          (Rutina, $$RutinasTableReferences),
-          Rutina,
-          PrefetchHooks Function({
-            bool rutinaEjerciciosRefs,
-            bool planSemanalRefs,
-          })
-        > {
-  $$RutinasTableTableManager(_$BaseDatos db, $RutinasTable table)
-    : super(
-        TableManagerState(
-          db: db,
-          table: table,
-          createFilteringComposer: () =>
-              $$RutinasTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () =>
-              $$RutinasTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () =>
-              $$RutinasTableAnnotationComposer($db: db, $table: table),
-          updateCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                Value<String> nombre = const Value.absent(),
-                Value<String?> notas = const Value.absent(),
-                Value<DateTime> creada = const Value.absent(),
-              }) => RutinasCompanion(
-                id: id,
-                nombre: nombre,
-                notas: notas,
-                creada: creada,
-              ),
-          createCompanionCallback:
-              ({
-                Value<int> id = const Value.absent(),
-                required String nombre,
-                Value<String?> notas = const Value.absent(),
-                required DateTime creada,
-              }) => RutinasCompanion.insert(
-                id: id,
-                nombre: nombre,
-                notas: notas,
-                creada: creada,
-              ),
-          withReferenceMapper: (p0) => p0
-              .map(
-                (e) => (
-                  e.readTable(table),
-                  $$RutinasTableReferences(db, table, e),
-                ),
-              )
-              .toList(),
-          prefetchHooksCallback:
-              ({rutinaEjerciciosRefs = false, planSemanalRefs = false}) {
-                return PrefetchHooks(
-                  db: db,
-                  explicitlyWatchedTables: [
-                    if (rutinaEjerciciosRefs) db.rutinaEjercicios,
-                    if (planSemanalRefs) db.planSemanal,
-                  ],
-                  addJoins: null,
-                  getPrefetchedDataCallback: (items) async {
-                    return [
-                      if (rutinaEjerciciosRefs)
-                        await $_getPrefetchedData<
-                          Rutina,
-                          $RutinasTable,
-                          RutinaEjercicio
-                        >(
-                          currentTable: table,
-                          referencedTable: $$RutinasTableReferences
-                              ._rutinaEjerciciosRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$RutinasTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).rutinaEjerciciosRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.rutinaId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                      if (planSemanalRefs)
-                        await $_getPrefetchedData<
-                          Rutina,
-                          $RutinasTable,
-                          DiaPlan
-                        >(
-                          currentTable: table,
-                          referencedTable: $$RutinasTableReferences
-                              ._planSemanalRefsTable(db),
-                          managerFromTypedResult: (p0) =>
-                              $$RutinasTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).planSemanalRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.rutinaId == item.id,
-                              ),
-                          typedResults: items,
-                        ),
-                    ];
-                  },
-                );
-              },
-        ),
-      );
-}
-
-typedef $$RutinasTableProcessedTableManager =
-    ProcessedTableManager<
-      _$BaseDatos,
-      $RutinasTable,
-      Rutina,
-      $$RutinasTableFilterComposer,
-      $$RutinasTableOrderingComposer,
-      $$RutinasTableAnnotationComposer,
-      $$RutinasTableCreateCompanionBuilder,
-      $$RutinasTableUpdateCompanionBuilder,
-      (Rutina, $$RutinasTableReferences),
-      Rutina,
-      PrefetchHooks Function({bool rutinaEjerciciosRefs, bool planSemanalRefs})
     >;
 typedef $$RutinaEjerciciosTableCreateCompanionBuilder =
     RutinaEjerciciosCompanion Function({
@@ -5488,12 +5774,12 @@ typedef $$PesosCorporalesTableProcessedTableManager =
 class $BaseDatosManager {
   final _$BaseDatos _db;
   $BaseDatosManager(this._db);
+  $$RutinasTableTableManager get rutinas =>
+      $$RutinasTableTableManager(_db, _db.rutinas);
   $$SesionesTableTableManager get sesiones =>
       $$SesionesTableTableManager(_db, _db.sesiones);
   $$SeriesTableTableManager get series =>
       $$SeriesTableTableManager(_db, _db.series);
-  $$RutinasTableTableManager get rutinas =>
-      $$RutinasTableTableManager(_db, _db.rutinas);
   $$RutinaEjerciciosTableTableManager get rutinaEjercicios =>
       $$RutinaEjerciciosTableTableManager(_db, _db.rutinaEjercicios);
   $$PlanSemanalTableTableManager get planSemanal =>

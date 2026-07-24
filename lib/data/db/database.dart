@@ -48,6 +48,12 @@ class Sesiones extends Table {
   /// Energía y dolor muscular percibidos antes de empezar, escala 1-10.
   IntColumn get energia => integer().nullable()();
   IntColumn get dolor => integer().nullable()();
+
+  /// Rutina de la que salió esta sesión, si vino de una. Enlaza el plan → la
+  /// sesión registrada. setNull para conservar la sesión aunque borres la
+  /// rutina. v5.
+  IntColumn get rutinaId =>
+      integer().nullable().references(Rutinas, #id, onDelete: KeyAction.setNull)();
 }
 
 /// Tipo de serie. Afecta a las estadisticas: el calentamiento no suma volumen.
@@ -216,7 +222,7 @@ class BaseDatos extends _$BaseDatos {
   BaseDatos.conEjecutor(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -248,6 +254,10 @@ class BaseDatos extends _$BaseDatos {
           // v3 -> v4: rutina asignada a cada día del plan.
           if (desde < 4) {
             await m.addColumn(planSemanal, planSemanal.rutinaId);
+          }
+          // v4 -> v5: la sesión recuerda de qué rutina salió.
+          if (desde < 5) {
+            await m.addColumn(sesiones, sesiones.rutinaId);
           }
         },
       );
@@ -300,9 +310,41 @@ class BaseDatos extends _$BaseDatos {
         .watch();
   }
 
-  Future<int> crearSesion(String nombre) => into(sesiones).insert(
-        SesionesCompanion.insert(nombre: nombre, inicio: DateTime.now()),
+  Future<int> crearSesion(String nombre, {int? rutinaId}) =>
+      into(sesiones).insert(
+        SesionesCompanion.insert(
+          nombre: nombre,
+          inicio: DateTime.now(),
+          rutinaId: Value(rutinaId),
+        ),
       );
+
+  /// Sesiones terminadas en un rango de fechas (para la semana / historial).
+  Future<List<Sesion>> sesionesEntre(DateTime desde, DateTime hasta) {
+    return (select(sesiones)
+          ..where((s) =>
+              s.fin.isNotNull() &
+              s.inicio.isBiggerOrEqualValue(desde) &
+              s.inicio.isSmallerThanValue(hasta))
+          ..orderBy([(s) => OrderingTerm.desc(s.inicio)]))
+        .get();
+  }
+
+  /// Ejercicios realmente entrenados (series marcadas como hechas) en un rango.
+  /// Sirve para el balance de lo que de verdad hiciste, no lo planeado.
+  Future<List<String>> ejerciciosHechosEntre(DateTime desde, DateTime hasta) async {
+    final filas = await customSelect(
+      '''
+      SELECT DISTINCT se.ejercicio_id AS ejercicio
+      FROM series se
+      JOIN sesiones s ON s.id = se.sesion_id
+      WHERE se.hecha = 1 AND s.inicio BETWEEN ? AND ?
+      ''',
+      variables: [Variable.withDateTime(desde), Variable.withDateTime(hasta)],
+      readsFrom: {series, sesiones},
+    ).get();
+    return filas.map((f) => f.read<String>('ejercicio')).toList();
+  }
 
   Future<void> terminarSesion(int id) => (update(sesiones)
         ..where((s) => s.id.equals(id)))
