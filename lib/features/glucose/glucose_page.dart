@@ -566,6 +566,7 @@ class _AvisoGmi extends StatelessWidget {
   void _mostrarExplicacion(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => const _HojaGmi(),

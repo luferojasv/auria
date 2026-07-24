@@ -11,6 +11,7 @@ import '../../theme/glass_tokens.dart';
 Future<void> abrirNuevoEvento(BuildContext context, WidgetRef ref) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => const _HojaEvento(),

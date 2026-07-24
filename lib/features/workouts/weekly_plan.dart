@@ -61,6 +61,7 @@ class TiraSemana extends ConsumerWidget {
   void _editarDia(BuildContext context, WidgetRef ref, int dia, DiaPlan? actual) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _HojaEditarDia(dia: dia, actual: actual),

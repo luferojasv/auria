@@ -9,6 +9,9 @@ import '../../theme/glass_tokens.dart';
 Future<void> abrirVinculoGlucosa(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
+    // Sobre el navegador raíz: si no, el panel se abre dentro del contenido y
+    // la barra de navegación flotante queda montada encima, tapando sus botones.
+    useRootNavigator: true,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
     builder: (_) => const _HojaVinculo(),

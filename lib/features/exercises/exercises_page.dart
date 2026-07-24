@@ -127,6 +127,7 @@ class _ExercisesPageState extends ConsumerState<ExercisesPage> {
   void _abrirFiltros(BuildContext context, CatalogoEjercicios catalogo) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _HojaFiltros(catalogo: catalogo),

@@ -330,6 +330,7 @@ class _FilaSerieState extends ConsumerState<_FilaSerie> {
   void _detalleSerie(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _DetalleSerie(serie: widget.serie),
     );
