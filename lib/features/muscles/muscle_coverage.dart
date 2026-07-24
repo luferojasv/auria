@@ -79,3 +79,37 @@ final balanceRealProvider = FutureProvider<Cobertura>((ref) async {
   }
   return (primarios: primarios, secundarios: secundarios);
 });
+
+/// Mapa de calor: intensidad relativa (0..1) con que trabajas cada músculo,
+/// según el VOLUMEN (kg × reps) de las series hechas en los últimos 30 días.
+/// El músculo principal se lleva el volumen entero; los secundarios, una parte.
+final intensidadMuscularProvider = FutureProvider<Map<String, double>>((ref) async {
+  ref.watch(historialProvider);
+  final db = ref.watch(baseDatosProvider);
+  final repo = await ref.watch(repositorioEjerciciosProvider.future);
+  final ahora = DateTime.now();
+  final vol = await db.volumenPorEjercicio(
+    desde: ahora.subtract(const Duration(days: 30)),
+    hasta: ahora,
+  );
+
+  final acc = <String, double>{};
+  vol.forEach((ejId, v) {
+    final e = repo.porId(ejId);
+    if (e == null) return;
+    final p = slugDeMusculo(e.objetivo);
+    if (p != null) acc[p] = (acc[p] ?? 0) + v;
+    // Los secundarios reciben el 40% del volumen: contribuyen, pero menos.
+    final g = slugDeMusculo(e.grupo);
+    if (g != null) acc[g] = (acc[g] ?? 0) + v * 0.4;
+    for (final s in e.secundarios) {
+      final ss = slugDeMusculo(s);
+      if (ss != null) acc[ss] = (acc[ss] ?? 0) + v * 0.4;
+    }
+  });
+
+  if (acc.isEmpty) return const {};
+  final maximo = acc.values.reduce((a, b) => a > b ? a : b);
+  if (maximo <= 0) return const {};
+  return {for (final e in acc.entries) e.key: e.value / maximo};
+});
