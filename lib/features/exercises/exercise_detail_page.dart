@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/providers.dart';
 import '../../shared/widgets/glass_bits.dart';
@@ -156,7 +157,9 @@ class _BotonAtras extends StatelessWidget {
       child: GlassCard(
         padding: EdgeInsets.zero,
         radio: BorderRadius.circular(999),
-        onTap: () => Navigator.of(context).maybePop(),
+        // Si hay pila, vuelve; si no (p. ej. se llegó por enlace directo), va
+        // al catálogo en vez de quedarse sin salida.
+        onTap: () => context.canPop() ? context.pop() : context.go('/ejercicios'),
         child: const SizedBox(
           width: 40,
           height: 40,

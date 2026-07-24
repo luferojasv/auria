@@ -7,6 +7,8 @@ import '../../core/providers.dart';
 import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
+import '../muscles/muscle_map.dart';
+import '../muscles/muscle_silhouette.dart';
 import 'domain/exercise.dart';
 import 'domain/taxonomy_es.dart';
 import 'exercise_providers.dart';
@@ -76,6 +78,7 @@ class _ExercisesPageState extends ConsumerState<ExercisesPage> {
               onZona: ctrl.zona,
               onMas: () => _abrirFiltros(context, r.catalogo),
               onLimpiar: ctrl.limpiar,
+              onSilueta: () => _abrirSilueta(context),
             ),
           ),
           orElse: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
@@ -131,6 +134,16 @@ class _ExercisesPageState extends ConsumerState<ExercisesPage> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => _HojaFiltros(catalogo: catalogo),
+    );
+  }
+
+  void _abrirSilueta(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => const _HojaSilueta(),
     );
   }
 }
@@ -200,6 +213,7 @@ class _FilaFiltros extends StatelessWidget {
     required this.onZona,
     required this.onMas,
     required this.onLimpiar,
+    required this.onSilueta,
   });
 
   final List<String> zonas;
@@ -207,6 +221,7 @@ class _FilaFiltros extends StatelessWidget {
   final ValueChanged<String?> onZona;
   final VoidCallback onMas;
   final VoidCallback onLimpiar;
+  final VoidCallback onSilueta;
 
   @override
   Widget build(BuildContext context) {
@@ -216,6 +231,17 @@ class _FilaFiltros extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: G.e4),
         children: [
+          // Filtro por músculo tocando la silueta.
+          GlassChip(
+            texto: filtro.musculoSlug == null
+                ? 'Músculo'
+                : nombreSlug(filtro.musculoSlug!),
+            icono: Icons.accessibility_new_rounded,
+            activo: filtro.musculoSlug != null,
+            color: G.acentoPulso,
+            onTap: onSilueta,
+          ),
+          const SizedBox(width: G.e2),
           GlassChip(
             texto: filtro.activos > 0 ? 'Filtros · ${filtro.activos}' : 'Filtros',
             icono: Icons.tune_rounded,
@@ -238,6 +264,65 @@ class _FilaFiltros extends StatelessWidget {
           ],
           const SizedBox(width: G.e4),
         ],
+      ),
+    );
+  }
+}
+
+/// Hoja con la silueta interactiva para filtrar por músculo.
+class _HojaSilueta extends ConsumerWidget {
+  const _HojaSilueta();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ctrl = ref.read(filtroEjerciciosProvider.notifier);
+    final actual = ref.watch(filtroEjerciciosProvider).musculoSlug;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(G.radioL)),
+      child: Container(
+        color: G.fondoAlto,
+        height: 520,
+        padding: const EdgeInsets.fromLTRB(G.e5, G.e3, G.e5, G.e6),
+        child: Column(
+          children: [
+            Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: G.e4),
+              decoration: BoxDecoration(
+                color: G.cristalBordeAlto,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+            Row(
+              children: [
+                Text('Toca un músculo', style: T.seccion),
+                const Spacer(),
+                if (actual != null)
+                  GestureDetector(
+                    onTap: () {
+                      ctrl.musculo(null);
+                      Navigator.of(context).pop();
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: Text('Quitar filtro',
+                        style: T.etiqueta.copyWith(color: G.acentoPulso, fontWeight: FontWeight.w600)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: G.e3),
+            Expanded(
+              child: SiluetaConVistas(
+                resaltado: actual,
+                onMusculo: (slug) {
+                  ctrl.musculo(slug);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

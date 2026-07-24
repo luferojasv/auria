@@ -42,7 +42,8 @@ class SessionPage extends ConsumerWidget {
                     GlassCard(
                       padding: EdgeInsets.zero,
                       radio: BorderRadius.circular(999),
-                      onTap: () => context.pop(),
+                      onTap: () =>
+                          context.canPop() ? context.pop() : context.go('/entrenar'),
                       child: const SizedBox(
                         width: 40,
                         height: 40,
@@ -157,7 +158,11 @@ class SessionPage extends ConsumerWidget {
         ),
       ),
     );
-    context.pop();
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/entrenar');
+    }
   }
 }
 

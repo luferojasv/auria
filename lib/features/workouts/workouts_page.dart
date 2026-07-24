@@ -8,6 +8,7 @@ import '../../data/db/database.dart';
 import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
+import '../muscles/muscle_balance_card.dart';
 import 'routine_actions.dart';
 import 'start_workout_sheet.dart';
 import 'weekly_plan.dart';
@@ -51,6 +52,8 @@ class WorkoutsPage extends ConsumerWidget {
               const TiraSemana(),
 
               _SeccionRutinas(),
+
+              const MuscleBalanceCard(),
 
               const EncabezadoSeccion(titulo: 'Sesión'),
               enCurso.when(

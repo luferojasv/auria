@@ -110,3 +110,26 @@ String? slugDeMusculo(String? datasetMuscle) {
   if (datasetMuscle == null) return null;
   return _aSlug[datasetMuscle.toLowerCase().trim()];
 }
+
+/// Nombre en español de un slug de MuscleMap, para mostrarlo en la interfaz.
+const Map<String, String> nombresSlug = {
+  'chest': 'Pecho',
+  'abs': 'Abdominales',
+  'biceps': 'Bíceps',
+  'triceps': 'Tríceps',
+  'deltoids': 'Hombros',
+  'obliques': 'Oblicuos',
+  'quadriceps': 'Cuádriceps',
+  'calves': 'Gemelos',
+  'adductors': 'Aductores',
+  'trapezius': 'Trapecio',
+  'forearm': 'Antebrazos',
+  'serratus': 'Serrato',
+  'hip-flexors': 'Flexores de cadera',
+  'gluteal': 'Glúteos',
+  'hamstring': 'Isquiotibiales',
+  'upper-back': 'Espalda alta',
+  'lower-back': 'Espalda baja',
+};
+
+String nombreSlug(String slug) => nombresSlug[slug] ?? slug;

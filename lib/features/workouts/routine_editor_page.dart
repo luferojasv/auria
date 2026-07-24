@@ -9,6 +9,8 @@ import '../../shared/widgets/glass_bits.dart';
 import '../../shared/widgets/glass_card.dart';
 import '../../theme/glass_tokens.dart';
 import '../exercises/exercise_providers.dart';
+import '../muscles/muscle_map.dart';
+import '../muscles/muscle_map_view.dart';
 import 'exercise_picker_sheet.dart';
 
 /// Editor de una rutina: nombre y su lista de ejercicios (con GIF, series y
@@ -40,7 +42,8 @@ class RoutineEditorPage extends ConsumerWidget {
                     GlassCard(
                       padding: EdgeInsets.zero,
                       radio: BorderRadius.circular(999),
-                      onTap: () => context.pop(),
+                      onTap: () =>
+                          context.canPop() ? context.pop() : context.go('/entrenar'),
                       child: const SizedBox(
                         width: 40,
                         height: 40,
@@ -69,13 +72,16 @@ class RoutineEditorPage extends ConsumerWidget {
                 }
                 return SliverPadding(
                   padding: const EdgeInsets.fromLTRB(G.e4, 0, G.e4, 160),
-                  sliver: SliverList.separated(
-                    itemCount: lista.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: G.e3),
-                    itemBuilder: (_, i) => _FilaEjercicioRutina(
-                      item: lista[i],
-                      posicion: i + 1,
-                    ),
+                  sliver: SliverList.list(
+                    children: [
+                      // Resumen visual: qué músculos cubre la rutina entera.
+                      _ResumenMusculos(items: lista),
+                      const SizedBox(height: G.e4),
+                      for (var i = 0; i < lista.length; i++) ...[
+                        _FilaEjercicioRutina(item: lista[i], posicion: i + 1),
+                        const SizedBox(height: G.e3),
+                      ],
+                    ],
                   ),
                 );
               },
@@ -314,6 +320,51 @@ class _Paso extends StatelessWidget {
         ),
         child: Icon(icono,
             size: 15, color: onTap == null ? G.textoTenue : G.acentoEjercicio),
+      ),
+    );
+  }
+}
+
+/// Silueta que resume todos los músculos que trabaja la rutina: reúne los
+/// músculos principales de cada ejercicio (primarios) y sus secundarios.
+class _ResumenMusculos extends ConsumerWidget {
+  const _ResumenMusculos({required this.items});
+
+  final List<RutinaEjercicio> items;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final repo = ref.watch(repositorioEjerciciosProvider).value;
+    if (repo == null) return const SizedBox.shrink();
+
+    final primarios = <String>{};
+    final secundarios = <String>{};
+    for (final it in items) {
+      final e = repo.porId(it.ejercicioId);
+      if (e == null) continue;
+      final p = slugDeMusculo(e.objetivo);
+      if (p != null) primarios.add(p);
+      final g = slugDeMusculo(e.grupo);
+      if (g != null) secundarios.add(g);
+      for (final s in e.secundarios) {
+        final ss = slugDeMusculo(s);
+        if (ss != null) secundarios.add(ss);
+      }
+    }
+    if (primarios.isEmpty && secundarios.isEmpty) return const SizedBox.shrink();
+
+    return GlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Músculos que trabaja', style: T.overline),
+          const SizedBox(height: G.e2),
+          MuscleMapView(
+            primarios: primarios,
+            secundarios: secundarios.difference(primarios),
+            altura: 200,
+          ),
+        ],
       ),
     );
   }
