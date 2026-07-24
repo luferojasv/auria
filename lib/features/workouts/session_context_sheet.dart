@@ -6,6 +6,16 @@ import '../../data/db/database.dart';
 import '../../shared/widgets/glass_bits.dart';
 import '../../theme/glass_tokens.dart';
 
+/// Icono de Material para cada estado de ánimo (sin emojis, por coherencia
+/// visual). La familia `sentiment_*` cubre justo la escala genial→mal.
+IconData iconoAnimo(Animo a) => switch (a) {
+      Animo.genial => Icons.sentiment_very_satisfied_rounded,
+      Animo.bien => Icons.sentiment_satisfied_rounded,
+      Animo.normal => Icons.sentiment_neutral_rounded,
+      Animo.bajo => Icons.sentiment_dissatisfied_rounded,
+      Animo.mal => Icons.sentiment_very_dissatisfied_rounded,
+    };
+
 /// Check-in previo al entrenamiento: cómo llegas. Ánimo, energía y dolor se
 /// registran ANTES de entrenar para poder cruzarlos luego con el rendimiento.
 Future<void> abrirContextoSesion(
@@ -167,7 +177,9 @@ class _BotonAnimo extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(animo.emoji, style: const TextStyle(fontSize: 22)),
+            Icon(iconoAnimo(animo),
+                size: 24,
+                color: seleccionado ? G.acentoEjercicio : G.textoMedio),
             const SizedBox(height: 4),
             Text(
               animo.etiqueta,

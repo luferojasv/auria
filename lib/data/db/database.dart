@@ -24,13 +24,6 @@ extension AnimoEs on Animo {
         Animo.bajo => 'Bajo',
         Animo.mal => 'Mal',
       };
-  String get emoji => switch (this) {
-        Animo.genial => '🤩',
-        Animo.bien => '🙂',
-        Animo.normal => '😐',
-        Animo.bajo => '😕',
-        Animo.mal => '😣',
-      };
 }
 
 @DataClassName('Sesion')

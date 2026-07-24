@@ -51,7 +51,8 @@ class _MuscleBalanceCardState extends ConsumerState<MuscleBalanceCard> {
                   _Toggle(texto: 'Hecho', activo: _modo == _Modo.hecho,
                       onTap: () => setState(() => _modo = _Modo.hecho)),
                   const SizedBox(width: G.e2),
-                  _Toggle(texto: '🔥 Calor', activo: _modo == _Modo.calor,
+                  _Toggle(texto: 'Calor', icono: Icons.local_fire_department_rounded,
+                      activo: _modo == _Modo.calor,
                       onTap: () => setState(() => _modo = _Modo.calor)),
                 ],
               ),
@@ -265,14 +266,21 @@ class _VistaCalor extends StatelessWidget {
 }
 
 class _Toggle extends StatelessWidget {
-  const _Toggle({required this.texto, required this.activo, required this.onTap});
+  const _Toggle({
+    required this.texto,
+    required this.activo,
+    required this.onTap,
+    this.icono,
+  });
 
   final String texto;
   final bool activo;
   final VoidCallback onTap;
+  final IconData? icono;
 
   @override
   Widget build(BuildContext context) {
+    final color = activo ? G.acentoEjercicio : G.textoBajo;
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -285,12 +293,21 @@ class _Toggle extends StatelessWidget {
             color: activo ? G.acentoEjercicio.withValues(alpha: 0.5) : G.cristalBorde,
           ),
         ),
-        child: Text(
-          texto,
-          style: T.etiqueta.copyWith(
-            color: activo ? G.acentoEjercicio : G.textoBajo,
-            fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icono != null) ...[
+              Icon(icono, size: 13, color: color),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              texto,
+              style: T.etiqueta.copyWith(
+                color: color,
+                fontWeight: activo ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

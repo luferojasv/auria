@@ -61,8 +61,8 @@ class SessionPage extends ConsumerWidget {
                           width: 40,
                           height: 40,
                           child: Icon(
-                            enCurso.animoAntes?.emoji != null
-                                ? Icons.mood_rounded
+                            enCurso.animoAntes != null
+                                ? iconoAnimo(enCurso.animoAntes!)
                                 : Icons.mood_outlined,
                             size: 20,
                             color: enCurso.animoAntes != null ? G.acentoCalorias : G.textoAlto,
